@@ -27,19 +27,20 @@ public class PictureCallback implements Camera.PictureCallback {
 		Mat mat;
 		Bitmap bmp;
 		if (data != null) {
-		try{	
-			rectView.setPaintColor(Color.GREEN);
-			bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
-			mat = new Mat(bmp.getHeight(), bmp.getWidth(), CvType.CV_8UC1);
-			Utils.bitmapToMat(bmp, mat);
-            //Imgproc.adaptiveThreshold(mat, mat, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 11, 2);
-            
+			try{	
+				rectView.setPaintColor(Color.GREEN);
+				bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+				mat = new Mat(bmp.getHeight(), bmp.getWidth(), CvType.CV_8UC1);
+				Utils.bitmapToMat(bmp, mat);
+				Imgproc.cvtColor(mat, mat, Imgproc.COLOR_BGR2GRAY);
+	            Imgproc.adaptiveThreshold(mat, mat, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 11, 2);
+	            Utils.matToBitmap(mat, bmp);
+			}
+			catch(Exception e){
+				rectView.setPaintColor(Color.RED);
+				shCB.startPreview();
+			}
 		}
-		catch(Exception e){
-			rectView.setPaintColor(Color.RED);
-			shCB.startPreview();
-		}
-	}
 	
 	}
 
