@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">SudokuSolver</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="picture_button">Take Picture</string>
+    <color name="gray">#99cdc9c9</color>
+    
+
+</resources>
