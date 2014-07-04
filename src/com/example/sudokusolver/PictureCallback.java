@@ -1,47 +1,63 @@
 package com.example.sudokusolver;
 
-import org.opencv.android.Utils;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.BitmapRegionDecoder;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.hardware.Camera;
 import android.util.Log;
 
 public class PictureCallback implements Camera.PictureCallback {
 
-	private RectangleView rectView;
-	private SurfaceHolderCallback shCB;
+	private RectangleView mRectView;
+	private SurfaceHolderCallback mShCB;
+	private Context mContext;
 	
-	public PictureCallback(RectangleView rectView, SurfaceHolderCallback shCB){
-		this.rectView = rectView;
-		this.shCB = shCB;
+	public PictureCallback(RectangleView rectView, SurfaceHolderCallback shCB, Context c){
+		mRectView = rectView;
+		mShCB = shCB;
+		mContext = c;
 	}
 	@Override
 	public void onPictureTaken(byte[] data, Camera camera) {
 		Log.d("Taken Picture", "pic");
-		shCB.stopPreview();
-		Mat mat;
-		Bitmap bmp;
+		mShCB.stopPreview();
 		if (data != null) {
 			try{	
-				rectView.setPaintColor(Color.GREEN);
-				bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
-				mat = new Mat(bmp.getHeight(), bmp.getWidth(), CvType.CV_8UC1);
-				Utils.bitmapToMat(bmp, mat);
-				Imgproc.cvtColor(mat, mat, Imgproc.COLOR_BGR2GRAY);
-	            Imgproc.adaptiveThreshold(mat, mat, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 11, 2);
-	            Utils.matToBitmap(mat, bmp);
+				Bitmap fullbmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+				
+				BitmapRegionDecoder regionDecoder = BitmapRegionDecoder.newInstance(data, 0, data.length, true);
+				Rect r = findROI(fullbmp);
+ 				Bitmap bmp = regionDecoder.decodeRegion(r, null);
+ 				
+				ImgManipulation imgManip = new ImgManipulation(mContext, bmp);
+				imgManip.doStoreBitmap(bmp);
+				mRectView.setPaintColor(Color.GREEN);
+				Log.d("fullfmp dimens", fullbmp.getWidth() + "," + fullbmp.getHeight());
+				Log.d("rect dimens", r.top + "," + r.bottom + "," + r.left + "," + r.right);
+				Log.d("bmp dimens", bmp.getWidth() + "," + bmp.getHeight());
 			}
 			catch(Exception e){
-				rectView.setPaintColor(Color.RED);
-				shCB.startPreview();
+				mRectView.setPaintColor(Color.RED);
+				mShCB.startPreview();
+				Log.d("Error", e + "");
 			}
 		}
 	
+	}
+	
+	private Rect findROI(Bitmap fullbmp){
+		int top = (int) (mRectView.getTopRatio() * fullbmp.getWidth());
+		int bot = (int) (mRectView.getBottomRatio() * fullbmp.getWidth());
+		int left = (int) (mRectView.getLeftRatio() * fullbmp.getHeight());
+		int right = (int) (mRectView.getRightRatio() * fullbmp.getHeight());
+		
+		Rect r = new Rect(top, left, bot, right);
+		return r;
 	}
 
 }

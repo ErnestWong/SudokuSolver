@@ -1,17 +1,11 @@
 package com.example.sudokusolver;
 
-import java.io.IOException;
-
 import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
-import org.opencv.core.Mat;
 
 import android.app.Activity;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.content.Context;
 import android.graphics.Color;
 import android.hardware.Camera;
 import android.os.Bundle;
@@ -26,6 +20,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 public class MainActivity extends Activity {
+	private Context mContext;
 	private Camera mCamera;
 	//private SurfaceView mSurfaceView;
 	private SurfaceHolder mSurfaceHolder;
@@ -58,6 +53,7 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		mContext = getApplicationContext();
 		final SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceviewcamera);
 		final Button captureButton = (Button) findViewById(R.id.takepicture);
 		final FrameLayout frameLayout = (FrameLayout) findViewById(R.id.frame_layout);
@@ -68,7 +64,7 @@ public class MainActivity extends Activity {
 		// get the holder providing access+control over the surfaceview
 		mSurfaceHolder = surfaceView.getHolder();
 
-		mSurfaceCB = new SurfaceHolderCallback(mCamera, mRectView);
+		mSurfaceCB = new SurfaceHolderCallback(mCamera, mRectView, mContext);
 		// add callback interface to holder
 		mSurfaceHolder.addCallback(mSurfaceCB);
 
@@ -79,7 +75,7 @@ public class MainActivity extends Activity {
 			public void onClick(View v) {
 				Log.d("Button Clicked", "button");
 				mSurfaceCB.takePicture();
-				mRectView.setPaintColor(Color.GREEN);
+				//mRectView.setPaintColor(Color.GREEN);
 
 			}
 		});
