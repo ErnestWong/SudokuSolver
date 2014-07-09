@@ -75,10 +75,10 @@ public class ImgManipulation {
 			double y1 = line[1];
 			double x2 = line[2];
 			double y2 = line[3];
-			if(Math.abs(y2 - y1) < 10){
+			if(Math.abs(y2 - y1) < Math.abs(x2 - x1)){
 				horizontalLines.add(line);
 			}
-			else if(Math.abs(x2 - x1) < 10){
+			else if(Math.abs(x2 - x1) < Math.abs(y2 - y1)){
 				verticalLines.add(line);
 			}
 			//Point start = new Point(x1, y1);
@@ -128,15 +128,45 @@ public class ImgManipulation {
 		drawLine(leftLine, m2);
 		drawLine(rightLine, m2);
 		
+		Point topLeft = findCorner(topLine, leftLine);
+		Point bottomLeft = findCorner(bottomLine, leftLine);
+		Point topRight = findCorner(topLine, rightLine);
+		Point bottomRight = findCorner(bottomLine, rightLine);
+		
+		Log.d("Point topLeft", topLeft.x + "," + topLeft.y);
+		Log.d("Point bottomLeft", bottomLeft.x + "," + bottomLeft.y);
+		Log.d("Point topRight", topRight.x + "," + topRight.y);
+		Log.d("Point bottomRight", bottomRight.x + "," + bottomRight.y);
+		
+		Core.line(m2, topLeft, topRight, new Scalar(255, 255, 255), 3);
+		Core.line(m2, topLeft, bottomLeft, new Scalar(255, 255, 255), 3);
+		Core.line(m2, topRight, bottomRight, new Scalar(255, 255, 255), 3);
+		Core.line(m2, bottomLeft, bottomRight, new Scalar(255, 255, 255), 3);
+		
 		Log.d("houglines", lines.cols() + "");
 		Log.d("bmp dimens", "h: " + bmp.getHeight() + ", w: " + bmp.getWidth());
 		
 		storeImage(matToBitmap(m2));
-		//Log.d("number of Lines", lines.cols() + " ");
-		//storeImage(matToBitmap(m));
-		//storeImage(matToBitmap(findSubMat(m)));
 	}
 
+	private Point findCorner(double[]l1, double[]l2){
+		double x1 = l1[0];
+		double y1 = l1[1];
+		double x2 = l1[2];
+		double y2 = l1[3];
+		double x3 = l2[0];
+		double y3 = l2[1];
+		double x4 = l2[2];
+		double y4 = l2[3];
+		
+		double d = (x1-x2) * (y3-y4) - (y1-y2) * (x3-x4);
+		double x = ((x1*y2 - y1*x2) * (x3-x4) - (x1-x2) * (x3*y4 - y3*x4)) / d;
+		double y = ((x1*y2 - y1*x2) * (y3-y4) - (y1-y2) * (x3*y4 - y3*x4)) / d;
+		
+		Point p = new Point(x,y);
+		return p;
+	}
+	
 	private void drawLine(double[] line, Mat m){
 		double x1 = line[0];
 		double y1 = line[1];
