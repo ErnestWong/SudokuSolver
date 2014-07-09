@@ -28,18 +28,19 @@ public class PictureCallback implements Camera.PictureCallback {
 		mShCB.stopPreview();
 		if (data != null) {
 			try{	
-				Bitmap fullbmp = BitmapFactory.decodeByteArray(data, 0, data.length);
 				
-				BitmapRegionDecoder regionDecoder = BitmapRegionDecoder.newInstance(data, 0, data.length, true);
-				Rect r = findROI(fullbmp);
- 				Bitmap bmp = regionDecoder.decodeRegion(r, null);
+				Bitmap fullbmp = decodeByteAndScale(data, 5);
+				//BitmapRegionDecoder regionDecoder = BitmapRegionDecoder.newInstance(data, 0, data.length, true);
+				//Rect r = findROI(fullbmp);
+ 				//Bitmap bmp = regionDecoder.decodeRegion(r, null);
  				
-				ImgManipulation imgManip = new ImgManipulation(mContext, bmp);
-				imgManip.doStoreBitmap(bmp);
+				ImgManipulation imgManip = new ImgManipulation(mContext, fullbmp);
+				imgManip.doStoreBitmap(fullbmp);
 				mRectView.setPaintColor(Color.GREEN);
-				Log.d("fullfmp dimens", fullbmp.getWidth() + "," + fullbmp.getHeight());
-				Log.d("rect dimens", r.top + "," + r.bottom + "," + r.left + "," + r.right);
-				Log.d("bmp dimens", bmp.getWidth() + "," + bmp.getHeight());
+				mShCB.startPreview();
+				//Log.d("fullfmp dimens", fullbmp.getWidth() + "," + fullbmp.getHeight());
+				//Log.d("rect dimens", r.top + "," + r.bottom + "," + r.left + "," + r.right);
+				//Log.d("bmp dimens", bmp.getWidth() + "," + bmp.getHeight());
 			}
 			catch(Exception e){
 				mRectView.setPaintColor(Color.RED);
@@ -48,6 +49,15 @@ public class PictureCallback implements Camera.PictureCallback {
 			}
 		}
 	
+	}
+	
+	private Bitmap decodeByteAndScale(byte[] data, int scaleBy){
+		BitmapFactory.Options opts = new BitmapFactory.Options();
+		opts.inJustDecodeBounds = true;
+		opts.inSampleSize = scaleBy;
+		opts.inJustDecodeBounds = false;
+		Bitmap fullbmp = BitmapFactory.decodeByteArray(data, 0, data.length, opts);
+		return fullbmp;
 	}
 	
 	private Rect findROI(Bitmap fullbmp){
