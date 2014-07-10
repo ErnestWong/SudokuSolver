@@ -35,7 +35,7 @@ public class PictureCallback implements Camera.PictureCallback {
  				//Bitmap bmp = regionDecoder.decodeRegion(r, null);
  				
 				ImgManipulation imgManip = new ImgManipulation(mContext, fullbmp);
-				imgManip.doStoreBitmap(fullbmp);
+				imgManip.doStoreBitmap();
 				mRectView.setPaintColor(Color.GREEN);
 				mShCB.startPreview();
 				//Log.d("fullfmp dimens", fullbmp.getWidth() + "," + fullbmp.getHeight());

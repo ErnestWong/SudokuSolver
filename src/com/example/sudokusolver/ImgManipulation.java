@@ -15,7 +15,10 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.utils.Converters;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -28,7 +31,7 @@ public class ImgManipulation {
 
 	private Context mContext;
 	private Bitmap mBitmap;
-	public final float CONST_RATIO = (float) 0.1;
+	public final int THRESHOLD = 50;
 	public ImgManipulation(Context context, Bitmap bitmap) {
 		mContext = context;
 		mBitmap = bitmap;
@@ -37,32 +40,31 @@ public class ImgManipulation {
 	public Mat bitmapToMat(Bitmap bmp) {
 		Mat mat = new Mat(bmp.getHeight(), bmp.getWidth(), CvType.CV_8UC1);
 		Utils.bitmapToMat(bmp, mat);
-		Log.d("Mat info", mat.cols() + "," + mat.rows() + ": "
-				+ mat.size().height + " " + mat.size().width);
+		Log.d("Mat info", mat.cols() + "," + mat.rows() + ": " + mat.size().height + " " + mat.size().width);
 		return mat;
 	}
 
 	public Bitmap matToBitmap(Mat mat) {
-		Bitmap bmp = Bitmap.createBitmap(mat.cols(), mat.rows(),
-				Bitmap.Config.ARGB_8888);
+		Bitmap bmp = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
 		Utils.matToBitmap(mat, bmp);
 		return bmp;
 	}
 
-	public void doStoreBitmap(Bitmap src) {
-		Mat m = bitmapToMat(src);
+	public void doStoreBitmap() {
+		Mat m = bitmapToMat(mBitmap);
 		// Imgproc.cvtColor(m, m, Imgproc.COLOR_BGR2GRAY);
 		// Imgproc.adaptiveThreshold(m, m, 255,
 		// Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 11, 2);
 		//Mat lines = new Mat();
+		//Imgproc.blur(m, m, new Size(4,4));
 		Imgproc.Canny(m, m, 50, 200);
 		
-		
-		Bitmap bmp = findSubMat(matToBitmap(m));
+		//storeImage(matToBitmap(m));
+		Bitmap bmp = findGridArea(matToBitmap(m));
 		Mat m2 = bitmapToMat(bmp);
 		//Imgproc.Canny(m2, m2, 50, 200);
 		Imgproc.cvtColor(m2, m2, Imgproc.COLOR_RGB2GRAY);
-		Log.d("checkpoint", "afterConvertMat");
+
 		Mat lines = new Mat();
 		
 		List<double[]> horizontalLines = new ArrayList<double[]>();
@@ -138,17 +140,81 @@ public class ImgManipulation {
 		Log.d("Point topRight", topRight.x + "," + topRight.y);
 		Log.d("Point bottomRight", bottomRight.x + "," + bottomRight.y);
 		
-		Core.line(m2, topLeft, topRight, new Scalar(255, 255, 255), 3);
-		Core.line(m2, topLeft, bottomLeft, new Scalar(255, 255, 255), 3);
-		Core.line(m2, topRight, bottomRight, new Scalar(255, 255, 255), 3);
-		Core.line(m2, bottomLeft, bottomRight, new Scalar(255, 255, 255), 3);
+		//Core.line(m2, topLeft, topRight, new Scalar(255, 255, 255), 3);
+		//Core.line(m2, topLeft, bottomLeft, new Scalar(255, 255, 255), 3);
+		//Core.line(m2, topRight, bottomRight, new Scalar(255, 255, 255), 3);
+		//Core.line(m2, bottomLeft, bottomRight, new Scalar(255, 255, 255), 3);
 		
 		Log.d("houglines", lines.cols() + "");
 		Log.d("bmp dimens", "h: " + bmp.getHeight() + ", w: " + bmp.getWidth());
 		
-		storeImage(matToBitmap(m2));
+		Mat result = fixPerspective(topLeft, topRight, bottomLeft, bottomRight, m2);
+		Bitmap fixedBmp = matToBitmap(result);
+		
+		//9x9 array to store each number
+		Bitmap[][] nums = new Bitmap[9][9];
+		int width = fixedBmp.getWidth() / 9;
+		int height = fixedBmp.getHeight() / 9;
+		for(int i = 0; i < 9; i++){
+			for(int j = 0; j < 9; j++){
+				int x = width * i;
+				int y = height * j;
+				nums[i][j] = Bitmap.createBitmap(fixedBmp, x, y, width, height);
+			}
+		}
+		
+		storeImage(fixedBmp);
 	}
 
+	/**
+	 * returns undistorted version of Mat using transformation from OpenCV library
+	 * @param upLeft-- top left corner coordinates
+	 * @param upRight-- top right corner coordinates
+	 * @param downLeft-- bottom left corner coordinates
+	 * @param downRight-- bottom right corner coordinates
+	 * @param source-- source Mat
+	 * @return
+	 */
+	private Mat fixPerspective(Point upLeft, Point upRight, Point downLeft, Point downRight, Mat source){
+		List<Point> src = new ArrayList<Point>();
+		List<Point> dest = new ArrayList<Point>();
+		Mat result = new Mat(source.size(), source.type());
+		
+		//add the four corners to List
+		src.add(upLeft);
+		src.add(upRight);
+		src.add(downLeft);
+		src.add(downRight);
+		
+		Point topLeft = new Point(0,0);
+		Point topRight = new Point(source.cols(), 0);
+		Point bottomLeft = new Point(0, source.rows());
+		Point bottomRight = new Point(source.cols(), source.rows());
+		
+		//add destination corners to List (adjusted for rotation)
+		dest.add(topRight);
+		dest.add(bottomRight);
+		dest.add(topLeft);
+		dest.add(bottomLeft);
+		
+		//convert List to Mat
+		Mat srcM = Converters.vector_Point2f_to_Mat(src);
+		Mat destM = Converters.vector_Point2f_to_Mat(dest);
+		
+		//apply perspective transform using 3x3 matrix
+		Mat perspectiveTrans = new Mat(3, 3, CvType.CV_32FC1);
+		perspectiveTrans = Imgproc.getPerspectiveTransform(srcM, destM);
+		Imgproc.warpPerspective(source, result, perspectiveTrans, result.size());
+		
+		return result;
+	}
+	
+	/**
+	 * returns point of intersection between two lines
+	 * @param l1
+	 * @param l2
+	 * @return
+	 */
 	private Point findCorner(double[]l1, double[]l2){
 		double x1 = l1[0];
 		double y1 = l1[1];
@@ -167,24 +233,22 @@ public class ImgManipulation {
 		return p;
 	}
 	
-	private void drawLine(double[] line, Mat m){
-		double x1 = line[0];
-		double y1 = line[1];
-		double x2 = line[2];
-		double y2 = line[3];
-		
-		Point start = new Point(x1, y1);
-		Point end = new Point(x2, y2);
-		Log.d("boundaries", x1 + "," + y1 + " " + x2 + "," + y2);
-		Core.line(m, start, end, new Scalar(255, 255, 255), 3);
-	}
-	private Bitmap findSubMat(Bitmap bmp){
+	/**
+	 * trims the bitmap to contain only the sudoku grid
+	 * @param bmp
+	 * @return
+	 */
+	private Bitmap findGridArea(Bitmap bmp){
+		//find the four general edges of the sudoku grid; 5 pixel buffer region 
+		//in case any part of the grid gets cut off
 		int left = findBorders(1, bmp) - 5;
 		int right = findBorders(2, bmp) + 5;
 		int top = findBorders(3, bmp) - 5;
 		int bot = findBorders(4, bmp) + 5;
 		
-		if(Math.abs(right - left + (bot - top)) > 80){
+		//if sides differ by more than threshold amount of pixels, then 
+		//throw error since area is not square
+		if(Math.abs(right - left - (bot - top)) > THRESHOLD){
 			Log.d("submat error", "not square");
 		}
 		
@@ -193,46 +257,13 @@ public class ImgManipulation {
 		return subBmp;
 	}
 	
-	private boolean isBorderWidth(int height, Bitmap bmp) {
-		int streak = 0;
-		for (int i = 2*bmp.getWidth()/5; i < 3*bmp.getWidth()/5; i++) {
-			// if pixel is black
-			//if (bmp.getPixel(i, height) == Color.BLACK) {
-			//	streak++;
-			//} else {
-			//	streak = 0;
-			//}
-			if(bmp.getPixel(i, height) == Color.WHITE){
-				return false;
-			}
-		}
-
-		//if (streak > bmp.getWidth() * CONST_RATIO)
-		//	return true;
-		//else
-		//	return false;
-		return true;
-	}
-
-	private boolean isBorderHeight(int width, Bitmap bmp) {
-		int streak = 0;
-		for (int i = 2*bmp.getHeight()/5; i < 3*bmp.getHeight()/5; i++) {
-			// if pixel is not black
-			//if (bmp.getPixel(width, i) == Color.BLACK) {
-			//	streak++;
-			//} else {
-			//	streak = 0;
-			//}
-			if(bmp.getPixel(width, i) == Color.WHITE) return false;
-		}
-
-		//if (streak > bmp.getWidth() * CONST_RATIO)
-		//	return true;
-		//else
-		//	return false;
-		return true;
-	}
-
+	/**
+	 * find the borders of the sudoku grid; the check for white line begins 1/3 
+	 * away from the centre of the image
+	 * @param side
+	 * @param bmp
+	 * @return
+	 */
 	private int findBorders(int side, Bitmap bmp) {
 		switch (side) {
 		// left
@@ -261,9 +292,64 @@ public class ImgManipulation {
 			break;
 		}
 
-		return -1;
+		//returns negative border if not found
+		Log.d("Error", side + "");
+		return -6;
 	}
 
+	/**
+	 * checks if horizontal line(width) is outside the sudoku grid
+	 * @param height -- y coordinate
+	 * @param bmp -- bitmap containing image
+	 * @return
+	 */
+	private boolean isBorderWidth(int height, Bitmap bmp) {
+		for (int i = 2*bmp.getWidth()/5; i < 3*bmp.getWidth()/5; i++) {
+			// if pixel is black
+			if(bmp.getPixel(i, height) == Color.WHITE){
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * checks if vertical line(height) is outside the sudoku grid
+	 * @param width -- x coordinate
+	 * @param bmp -- bitmap containing image
+	 * @return
+	 */
+	private boolean isBorderHeight(int width, Bitmap bmp) {
+		for (int i = 2*bmp.getHeight()/5; i < 3*bmp.getHeight()/5; i++) {
+			//if pixel is black
+			if(bmp.getPixel(width, i) == Color.WHITE){
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * debugging method that draws line to mat
+	 * @param line
+	 * @param m
+	 */
+	private void drawLine(double[] line, Mat m){
+		double x1 = line[0];
+		double y1 = line[1];
+		double x2 = line[2];
+		double y2 = line[3];
+		
+		Point start = new Point(x1, y1);
+		Point end = new Point(x2, y2);
+		Log.d("boundaries", x1 + "," + y1 + " " + x2 + "," + y2);
+		Core.line(m, start, end, new Scalar(255, 255, 255), 3);
+	}
+	
+	/**
+	 * stores bitmap to internal storage
+	 * @param image
+	 */
 	private void storeImage(Bitmap image) {
 		if (image == null)
 			Log.d("null bitmap", "storeImage");
