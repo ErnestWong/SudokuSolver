@@ -151,6 +151,9 @@ public class ImgManipulation {
 		Mat result = fixPerspective(topLeft, topRight, bottomLeft, bottomRight, m2);
 		Bitmap fixedBmp = matToBitmap(result);
 		
+		storeImage(fixedBmp);
+		TessOCR ocr = new TessOCR(fixedBmp, mContext);
+		/*
 		//9x9 array to store each number
 		Bitmap[][] nums = new Bitmap[9][9];
 		int width = fixedBmp.getWidth() / 9;
@@ -162,8 +165,8 @@ public class ImgManipulation {
 				nums[i][j] = Bitmap.createBitmap(fixedBmp, x, y, width, height);
 			}
 		}
-		
-		storeImage(fixedBmp);
+		*/
+		ocr.initOCR();
 	}
 
 	/**
