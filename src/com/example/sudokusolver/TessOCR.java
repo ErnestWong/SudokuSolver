@@ -43,6 +43,7 @@ public class TessOCR{
         int width = mBitmap.getWidth() / 9;
         int height = mBitmap.getHeight() / 9;
         
+        /*
         for(int i = 0; i < 9; i++){
             for(int j = 0; j < 9; j++){
                 int x = width * i;
@@ -53,7 +54,7 @@ public class TessOCR{
                 Log.i("Sudoku " + i + "," + j ,result);
             }
         }
-        
+        */
         String result = tessAPI.getUTF8Text();
         Log.d("Results sudoku OCR", result);
         tessAPI.end();
@@ -64,20 +65,21 @@ public class TessOCR{
     		DATA_PATH = Environment.getExternalStorageDirectory() + "/Android/data/"
 					+ mContext.getPackageName() + "/Files/";
     		
-			InputStream in = mContext.getAssets().open("tessdata/" + TRAINED_DATA_FILENAME);
 			File dir = new File(DATA_PATH + TRAINED_DATA_DIRECTORY);
 			File file = new File(DATA_PATH + TRAINED_DATA_DIRECTORY + TRAINED_DATA_FILENAME);
 			
+			if(!file.exists()){
 
 				
+				InputStream in = mContext.getAssets().open("tessdata/" + TRAINED_DATA_FILENAME);
+				
+				if(dir.mkdirs()){
+					Log.d("directory created", dir.toString());
+				} else {
+					Log.d("directory creation failed", dir.toString());
+				}
 			
-			if(dir.mkdirs()){
-				Log.d("directory created", dir.toString());
-			} else {
-				Log.d("directory creation failed", dir.toString());
-			}
 			
-			if(!file.exists()){
 				byte[] buffer = new byte[1024];
 				FileOutputStream out = new FileOutputStream(file);
 				int length;
@@ -99,3 +101,4 @@ public class TessOCR{
     }
     
 }
+

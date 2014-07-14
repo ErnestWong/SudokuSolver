@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -31,6 +33,7 @@ public class ImgManipulation {
 
 	private Context mContext;
 	private Bitmap mBitmap;
+	private Bitmap fixedBmp;
 	public final int THRESHOLD = 50;
 	public ImgManipulation(Context context, Bitmap bitmap) {
 		mContext = context;
@@ -52,19 +55,15 @@ public class ImgManipulation {
 
 	public void doStoreBitmap() {
 		Mat m = bitmapToMat(mBitmap);
-		// Imgproc.cvtColor(m, m, Imgproc.COLOR_BGR2GRAY);
-		// Imgproc.adaptiveThreshold(m, m, 255,
-		// Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 11, 2);
-		//Mat lines = new Mat();
-		//Imgproc.blur(m, m, new Size(4,4));
-		Imgproc.Canny(m, m, 50, 200);
 		
-		//storeImage(matToBitmap(m));
+		Imgproc.Canny(m, m, 50, 200);
+
 		Bitmap bmp = findGridArea(matToBitmap(m));
 		Mat m2 = bitmapToMat(bmp);
-		//Imgproc.Canny(m2, m2, 50, 200);
+		bmp.recycle();
+		
 		Imgproc.cvtColor(m2, m2, Imgproc.COLOR_RGB2GRAY);
-
+		
 		Mat lines = new Mat();
 		
 		List<double[]> horizontalLines = new ArrayList<double[]>();
@@ -85,9 +84,10 @@ public class ImgManipulation {
 			}
 			//Point start = new Point(x1, y1);
 			//Point end = new Point(x2, y2);
-			Log.d("line points", x1 + "," + y1 + " " + x2 + "," + y2);
+			//Log.d("line points", x1 + "," + y1 + " " + x2 + "," + y2);
 			//Core.line(m2, start, end, new Scalar(255, 255, 255), 3);
 		}
+		
 		Log.d("line stats", "horizontal: " + horizontalLines.size() + ", vertical: " + verticalLines.size() + ", total: " + lines.cols());
 		
 		
@@ -125,10 +125,10 @@ public class ImgManipulation {
 			}
 		}
 		
-		drawLine(topLine, m2);
-		drawLine(bottomLine, m2);
-		drawLine(leftLine, m2);
-		drawLine(rightLine, m2);
+		//drawLine(topLine, m2);
+		//drawLine(bottomLine, m2);
+		//drawLine(leftLine, m2);
+		//drawLine(rightLine, m2);
 		
 		Point topLeft = findCorner(topLine, leftLine);
 		Point bottomLeft = findCorner(bottomLine, leftLine);
@@ -149,8 +149,18 @@ public class ImgManipulation {
 		Log.d("bmp dimens", "h: " + bmp.getHeight() + ", w: " + bmp.getWidth());
 		
 		Mat result = fixPerspective(topLeft, topRight, bottomLeft, bottomRight, m2);
-		Bitmap fixedBmp = matToBitmap(result);
+		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(3, 3));
+		Imgproc.dilate(result, result, kernel);
+		Imgproc.threshold(result, result, 128, 255, Imgproc.THRESH_BINARY);
+
+		fixedBmp = matToBitmap(result);
+		//fixedBmp = Bitmap.createScaledBitmap(fixedBmp, (int)(fixedBmp.getWidth()/1.5), (int)(fixedBmp.getHeight()/1.5), false);
+		if(!fixedBmp.isMutable()){
+			Log.d("fixedbmp", "immutable");
+		}
 		
+		
+		removeGrids();
 		storeImage(fixedBmp);
 		TessOCR ocr = new TessOCR(fixedBmp, mContext);
 		/*
@@ -169,6 +179,61 @@ public class ImgManipulation {
 		ocr.initOCR();
 	}
 
+	private void removeGrids(){
+		try{
+			Point whitePoint = findFirstWhite(fixedBmp);
+			Log.d("white point ", whitePoint.x + "," + whitePoint.y);
+			floodfill(whitePoint);
+		}
+		catch(Exception e){
+			Log.d("floodfill error", e.toString());
+		}
+	}
+	
+	private void floodfill(Point start){
+		boolean[][] checked = new boolean[fixedBmp.getWidth()][fixedBmp.getHeight()];
+		
+		Queue<Point> q = new LinkedList<Point>();
+		q.add(start);
+		while(!q.isEmpty()){
+			Point p = q.remove();
+			
+			if(!checked[(int)p.x][(int)p.y]){
+				if(fixedBmp.getPixel((int)p.x, (int)p.y) == Color.WHITE && !outOfBounds(p) && p.x > 0 && p.y > 0){
+					fixedBmp.setPixel((int)p.x, (int)p.y, Color.BLACK);
+					q.add(new Point(p.x-1, p.y-1));
+					q.add(new Point(p.x-1, p.y));
+					q.add(new Point(p.x-1, p.y+1));
+					q.add(new Point(p.x, p.y-1));
+					q.add(new Point(p.x, p.y+1));
+					q.add(new Point(p.x+1, p.y-1));
+					q.add(new Point(p.x+1, p.y));
+					q.add(new Point(p.x+1, p.y+1));
+				}
+			}
+			checked[(int)p.x][(int)p.y] = true;
+			//Log.d("queue", p.x + "," + p.y);
+		}
+	}
+	private Point findFirstWhite(Bitmap bmp){
+		for(int i = 1; i < bmp.getWidth(); i++){
+			for(int j = 1; j < bmp.getHeight(); j++){
+				if(bmp.getPixel(i, j) == Color.WHITE){
+					Point p = new Point(i,j);
+					return p;
+				}
+			}
+		}
+		return null;
+	}
+	private boolean outOfBounds(Point point){
+		if(point.x >= fixedBmp.getWidth()-2 || point.y >= fixedBmp.getHeight()-2){
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	/**
 	 * returns undistorted version of Mat using transformation from OpenCV library
 	 * @param upLeft-- top left corner coordinates
