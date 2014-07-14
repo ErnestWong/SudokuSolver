@@ -14,24 +14,28 @@ import android.util.Log;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
 public class TessOCR{
-    //public static final String DATA_PATH;
-	private Bitmap mBitmap;
+ 
+    private Bitmap mBitmap;
     private Context mContext;
     public final String TRAINED_DATA_DIRECTORY = "tessdata/";
     public final String TRAINED_DATA_FILENAME = "eng.traineddata";
     private String DATA_PATH;
+    public static final String TAG_DIR_CREATE_SUCCESS = "directory created success";
+    public static final String TAG_DIR_CREATE_FAIL = "directory failed create";
     
-	public TessOCR(Bitmap bitmap, Context context){
-		mBitmap = bitmap;
-		mContext = context;
-	}
-	
-    boolean trainTess(){
-		return false;
-        
+    /**
+     * constructor to obtain context+bitmap and initializes DATA_PATH needed for class methods
+     **/ 
+    public TessOCR(Bitmap bitmap, Context context){
+	mBitmap = bitmap;
+	mContext = context;
+	DATA_PATH = Environment.getExternalStorageDirectory() + "/Android/data/" + mContext.getPackageName() + "/Files/";
     }
     
-    
+    /**
+     * initializes OCR-- copies traineddata file from assets to external storage 
+     * (which is required by tess-two API) and accesses tess API
+     **/ 
     public void initOCR(){
         int[][] grid = new int[9][9];
         TessBaseAPI tessAPI = new TessBaseAPI();
@@ -60,45 +64,47 @@ public class TessOCR{
         tessAPI.end();
     }
     
+    /**
+     * copies traineddata file from assets folder to external storage (destination is DATA_PATH)
+     **/
     private void copyTessFileToStorage(){
     	try {
-    		DATA_PATH = Environment.getExternalStorageDirectory() + "/Android/data/"
-					+ mContext.getPackageName() + "/Files/";
-    		
-			File dir = new File(DATA_PATH + TRAINED_DATA_DIRECTORY);
-			File file = new File(DATA_PATH + TRAINED_DATA_DIRECTORY + TRAINED_DATA_FILENAME);
+    	    //initializes file and parent directory of file
+	    File dir = new File(DATA_PATH + TRAINED_DATA_DIRECTORY);
+	    File file = new File(DATA_PATH + TRAINED_DATA_DIRECTORY + TRAINED_DATA_FILENAME);
 			
-			if(!file.exists()){
-
+	    //checks if file already exists
+	    if(!file.exists()){
+		//copies file in assets folder to stream
+	        InputStream in = mContext.getAssets().open(TRAINED_DATA_DIRECTORY + TRAINED_DATA_FILENAME);
 				
-				InputStream in = mContext.getAssets().open("tessdata/" + TRAINED_DATA_FILENAME);
-				
-				if(dir.mkdirs()){
-					Log.d("directory created", dir.toString());
-				} else {
-					Log.d("directory creation failed", dir.toString());
-				}
+		    //create parent directories
+		    if(dir.mkdirs()){
+			Log.d(TAG_DIR_CREATE_SUCCESS, dir.toString());
+		    } else {
+			Log.d(TAG_DIR_CREATE_FAIL, dir.toString());
+		    }
 			
-			
-				byte[] buffer = new byte[1024];
-				FileOutputStream out = new FileOutputStream(file);
-				int length;
+	 	    //set outputstream to the destination in external storage
+	 	    //copies inputstream to outputstream
+		    byte[] buffer = new byte[1024];
+		    FileOutputStream out = new FileOutputStream(file);
+		    
+		    int length;
+		    while((length = in.read(buffer)) > 0){
+		 	out.write(buffer, 0, length);
+		    }
 				
-				while((length = in.read(buffer)) > 0){
-					out.write(buffer, 0, length);
-				}
-				
-				out.close();
-				in.close();
-				Log.d("file copied", " tess success");
-			}
+		    out.close();
+		    in.close();
+		    Log.d("file copied", " tess success");
+	    }
 			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			Log.d("file error TessOCR", e.toString());
-			e.printStackTrace();
-		}
-    }
+ 	} catch (IOException e) {
+	    Log.d("file error TessOCR", e.toString());
+	    e.printStackTrace();
+	}
+   }
     
 }
 
