@@ -35,20 +35,34 @@ public class ImgManipulation {
 	private Bitmap mBitmap;
 	private Bitmap fixedBmp;
 	public final int THRESHOLD = 50;
+	
+	public final String TAG_MAT_DIMENS = "Mat dimensions";
+	public final String TAG_BMP_DIMENS = "Bitmap dimensions";
+	public final String TAG_SUBMAT_DIMENS = "Submat dimensions";
+	public final String TAG_WHITE_POINT = "White point coorinates";
+	public final String TAG_HOUGHLINES = "HoughLines info";
+	public final String TAG_FILENAME = "file name";
+	public final String TAG_ERROR_FIND_GRID = "findGridArea error";
+	public final String TAG_ERROR_FILESAVE = "File save error";
+	public final String TAG_ERROR_FLOODFILL = "Floodfill setPixel error";
+
 	public ImgManipulation(Context context, Bitmap bitmap) {
 		mContext = context;
 		mBitmap = bitmap;
 	}
 
 	/**
-	 * converts bitmap to 1 channel 8 bit bitmap
+	 * converts bitmap to single channel 8 bit Mat
 	 * @param bmp-- bitmap to convert
 	 * @return
 	 */
 	public Mat bitmapToMat(Bitmap bmp) {
 		Mat mat = new Mat(bmp.getHeight(), bmp.getWidth(), CvType.CV_8UC1);
 		Utils.bitmapToMat(bmp, mat);
-		Log.d("Mat info", mat.cols() + "," + mat.rows() + ": " + mat.size().height + " " + mat.size().width);
+		
+		String matInfo = String.format("cols: %f, rows: %f", mat.cols(), mat.rows);
+		Log.d(TAG_MAT_DIMENS, matInfo);
+		
 		return mat;
 	}
 
@@ -60,6 +74,10 @@ public class ImgManipulation {
 	public Bitmap matToBitmap(Mat mat) {
 		Bitmap bmp = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
 		Utils.matToBitmap(mat, bmp);
+		
+		String bmpInfo = String.format("width: %f, height %f", bmp.getWidth(), bmp.getHeight());
+		Log.d(TAG_BMP_DIMENS, bmpInfo);
+		
 		return bmp;
 	}
 
@@ -98,11 +116,10 @@ public class ImgManipulation {
 		fixedBmp = matToBitmap(mat);
 		try{
 			Point whitePoint = findFirstWhite(fixedBmp);
-			Log.d("white point ", whitePoint.x + "," + whitePoint.y);
 			floodfill(whitePoint);
 		}
 		catch(Exception e){
-			Log.d("floodfill error", e.toString());
+			Log.d(TAG_ERROR_FLOODFILL, e.toString());
 		}
 	}
 	
@@ -149,6 +166,9 @@ public class ImgManipulation {
 			for(int j = 1; j < bmp.getHeight(); j++){
 				if(bmp.getPixel(i, j) == Color.WHITE){
 					Point p = new Point(i,j);
+					
+					String pointInfo = String.format("%f,%f", p.x, p.y);
+					Log.d(TAG_WHITE_POINT, pointInfo);
 					return p;
 				}
 			}
@@ -207,8 +227,8 @@ public class ImgManipulation {
 			//Log.d("line points", x1 + "," + y1 + " " + x2 + "," + y2);
 			//Core.line(m2, start, end, new Scalar(255, 255, 255), 3);
 		}
-		
-		Log.d("line stats", "horizontal: " + horizontalLines.size() + ", vertical: " + verticalLines.size() + ", total: " + lines.cols());
+		String lineInfo = String.format("horizontal: %f, vertical: %f, total: %f", horizontalLines.size(), verticalLines.size(), lines.cols());
+		Log.d(TAG_HOUGHLINES, lineInfo);
 		
 		//lines for four boundaries of sudoku grid; find edges of the sudoku grid 
 		double[] topLine = horizontalLines.get(0);
@@ -248,8 +268,6 @@ public class ImgManipulation {
 		Point bottomLeft = findCorner(bottomLine, leftLine);
 		Point topRight = findCorner(topLine, rightLine);
 		Point bottomRight = findCorner(bottomLine, rightLine);
-		
-		Log.d("houglines", lines.cols() + "");
 		
 		Mat result = fixPerspective(topLeft, topRight, bottomLeft, bottomRight, m2);
 		return result;
@@ -338,11 +356,14 @@ public class ImgManipulation {
 		//if sides differ by more than threshold amount of pixels, then 
 		//throw error since area is not square
 		if(Math.abs(right - left - (bot - top)) > THRESHOLD){
-			Log.d("submat error", "not square");
+			Log.d(TAG_ERROR_FIND_GRID, "not square");
 		}
 		
-		Log.d("submat", left + "," + right + "," + top + "," + bot);
 		Bitmap subBmp = Bitmap.createBitmap(bmp, left, top, right-left, bot-top);
+		
+		String subMatInfo = String.format("left: %f, right: %f, top: %f, bot: %f", left, right, top, bot);
+		Log.d(TAG_SUBMAT_DIMENS, subMatInfo);
+		
 		return subBmp;
 	}
 	
@@ -382,7 +403,7 @@ public class ImgManipulation {
 		}
 
 		//returns negative border if not found
-		Log.d("Error", side + "");
+		Log.d(TAG_ERROR_FIND_GRID, "boundary not found: side " + side);
 		return -6;
 	}
 
@@ -440,27 +461,26 @@ public class ImgManipulation {
 	 * @param image
 	 */
 	private void storeImage(Bitmap image) {
-		if (image == null)
+		if (image == null){
 			Log.d("null bitmap", "storeImage");
+		}
+		
 		File pictureFile = getOutputMediaFile();
-		Log.d("filename", pictureFile + "");
+		Log.d(TAG_FILENAME, pictureFile.toString());
 		if (pictureFile == null) {
-			Log.d(TAG, "Error creating media file, check storage permissions: ");// e.getMessage());
+			Log.d(TAG_ERROR_FILESAVE, "Error creating media file, check storage permissions: ");
 			return;
 		}
 		try {
 			FileOutputStream fos = new FileOutputStream(pictureFile);
 			image.compress(Bitmap.CompressFormat.PNG, 90, fos);
 			fos.close();
-			Log.d("FILe", "Success");
 		} catch (FileNotFoundException e) {
-			Log.d(TAG, "File not found: " + e.getMessage());
+			Log.d(TAG_EROR_FILESAVE, "File not found: " + e.getMessage());
 		} catch (IOException e) {
-			Log.d(TAG, "Error accessing file: " + e.getMessage());
+			Log.d(TAG_ERROR_FILESAVE, "Error accessing file: " + e.getMessage());
 		}
 	}
-
-	String TAG = "file save";
 
 	/** Create a File for saving an image or video */
 	private File getOutputMediaFile() {
