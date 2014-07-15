@@ -10,7 +10,6 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -18,28 +17,29 @@ import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
-
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.os.Environment;
 import android.util.Log;
 
+@SuppressLint("DefaultLocale")
 public class ImgManipulation {
 
 	private Context mContext;
 	private Bitmap mBitmap;
 	private Bitmap fixedBmp;
+	private final float CONST_RATIO = (float) 0.05;
 	public final int THRESHOLD = 50;
 	
 	public final String TAG_MAT_DIMENS = "Mat dimensions";
 	public final String TAG_BMP_DIMENS = "Bitmap dimensions";
 	public final String TAG_SUBMAT_DIMENS = "Submat dimensions";
 	public final String TAG_WHITE_POINT = "White point coorinates";
+	public final String TAG_TILE_STATUS = "tile status";
 	public final String TAG_HOUGHLINES = "HoughLines info";
 	public final String TAG_FILENAME = "file name";
 	public final String TAG_ERROR_FIND_GRID = "findGridArea error";
@@ -60,7 +60,7 @@ public class ImgManipulation {
 		Mat mat = new Mat(bmp.getHeight(), bmp.getWidth(), CvType.CV_8UC1);
 		Utils.bitmapToMat(bmp, mat);
 		
-		String matInfo = String.format("cols: %f, rows: %f", mat.cols(), mat.rows);
+		String matInfo = String.format("cols: %d, rows: %d", mat.cols(), mat.rows());
 		Log.d(TAG_MAT_DIMENS, matInfo);
 		
 		return mat;
@@ -75,7 +75,7 @@ public class ImgManipulation {
 		Bitmap bmp = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
 		Utils.matToBitmap(mat, bmp);
 		
-		String bmpInfo = String.format("width: %f, height %f", bmp.getWidth(), bmp.getHeight());
+		String bmpInfo = String.format("width: %d, height %d", bmp.getWidth(), bmp.getHeight());
 		Log.d(TAG_BMP_DIMENS, bmpInfo);
 		
 		return bmp;
@@ -87,9 +87,9 @@ public class ImgManipulation {
 	public void doStoreBitmap() {
 		Mat result = extractSudokuGrid();
 		removeGridlines(result);
-		storeImage(fixedBmp);
-		TessOCR ocr = new TessOCR(fixedBmp, mContext);
-		/*
+		storeImage(fixedBmp, "full");
+		//TessOCR ocr = new TessOCR(fixedBmp, mContext);
+		
 		//9x9 array to store each number
 		Bitmap[][] nums = new Bitmap[9][9];
 		int width = fixedBmp.getWidth() / 9;
@@ -99,12 +99,34 @@ public class ImgManipulation {
 				int x = width * i;
 				int y = height * j;
 				nums[i][j] = Bitmap.createBitmap(fixedBmp, x, y, width, height);
+				storeImage(nums[i][j], i + "," + j);
+				if(findEmptyTile(nums[i][j], CONST_RATIO)){
+					Log.d(TAG_TILE_STATUS, i + "," + j + ": empty");
+				} else {
+					Log.d(TAG_TILE_STATUS, i + "," + j + ": not empty");
+				}
 			}
 		}
-		*/
-		ocr.initOCR();
+		
+		//ocr.initOCR();
 	}
 
+	private boolean findEmptyTile(Bitmap bmp, float ratio){
+		int area = bmp.getWidth() * bmp.getHeight();
+		int totalWhite = 0;
+		for(int i = 0; i < bmp.getWidth(); i++){
+			for(int j = 0; j < bmp.getHeight(); j++){
+				if(bmp.getPixel(i,j) == Color.WHITE){
+					totalWhite++;
+				}
+			}
+		}
+		if(totalWhite > ratio * area){
+			return false;
+		} else {
+			return true;
+		}
+	}
 	/**
 	 * removes the gridlines from Mat image of sudoku grid
 	 * @param mat-- Mat containing image of sudoku grid
@@ -117,6 +139,7 @@ public class ImgManipulation {
 		try{
 			Point whitePoint = findFirstWhite(fixedBmp);
 			floodfill(whitePoint);
+			Log.d("Completed Gridlines", whitePoint.x + "," + whitePoint.y);
 		}
 		catch(Exception e){
 			Log.d(TAG_ERROR_FLOODFILL, e.toString());
@@ -167,7 +190,7 @@ public class ImgManipulation {
 				if(bmp.getPixel(i, j) == Color.WHITE){
 					Point p = new Point(i,j);
 					
-					String pointInfo = String.format("%f,%f", p.x, p.y);
+					String pointInfo = String.format("%d,%d", (int)p.x, (int)p.y);
 					Log.d(TAG_WHITE_POINT, pointInfo);
 					return p;
 				}
@@ -227,7 +250,7 @@ public class ImgManipulation {
 			//Log.d("line points", x1 + "," + y1 + " " + x2 + "," + y2);
 			//Core.line(m2, start, end, new Scalar(255, 255, 255), 3);
 		}
-		String lineInfo = String.format("horizontal: %f, vertical: %f, total: %f", horizontalLines.size(), verticalLines.size(), lines.cols());
+		String lineInfo = String.format("horizontal: %d, vertical: %d, total: %d", horizontalLines.size(), verticalLines.size(), lines.cols());
 		Log.d(TAG_HOUGHLINES, lineInfo);
 		
 		//lines for four boundaries of sudoku grid; find edges of the sudoku grid 
@@ -361,7 +384,7 @@ public class ImgManipulation {
 		
 		Bitmap subBmp = Bitmap.createBitmap(bmp, left, top, right-left, bot-top);
 		
-		String subMatInfo = String.format("left: %f, right: %f, top: %f, bot: %f", left, right, top, bot);
+		String subMatInfo = String.format("left: %d, right: %d, top: %d, bot: %d", left, right, top, bot);
 		Log.d(TAG_SUBMAT_DIMENS, subMatInfo);
 		
 		return subBmp;
@@ -460,30 +483,26 @@ public class ImgManipulation {
 	 * stores bitmap to internal storage
 	 * @param image
 	 */
-	private void storeImage(Bitmap image) {
+	private void storeImage(Bitmap image, String filename) {
 		if (image == null){
 			Log.d("null bitmap", "storeImage");
 		}
 		
-		File pictureFile = getOutputMediaFile();
+		File pictureFile = getOutputMediaFile(filename);
 		Log.d(TAG_FILENAME, pictureFile.toString());
-		if (pictureFile == null) {
-			Log.d(TAG_ERROR_FILESAVE, "Error creating media file, check storage permissions: ");
-			return;
-		}
 		try {
 			FileOutputStream fos = new FileOutputStream(pictureFile);
 			image.compress(Bitmap.CompressFormat.PNG, 90, fos);
 			fos.close();
 		} catch (FileNotFoundException e) {
-			Log.d(TAG_EROR_FILESAVE, "File not found: " + e.getMessage());
+			Log.d(TAG_ERROR_FILESAVE, "File not found: " + e.getMessage());
 		} catch (IOException e) {
 			Log.d(TAG_ERROR_FILESAVE, "Error accessing file: " + e.getMessage());
 		}
 	}
 
 	/** Create a File for saving an image or video */
-	private File getOutputMediaFile() {
+	private File getOutputMediaFile(String filename) {
 		// To be safe, you should check that the SDCard is mounted
 		// using Environment.getExternalStorageState() before doing this.
 		File mediaStorageDir = new File(
@@ -503,7 +522,7 @@ public class ImgManipulation {
 		String timeStamp = new SimpleDateFormat("ddMMyyyy_HHmm")
 				.format(new Date());
 		File mediaFile;
-		String mImageName = "MI_" + timeStamp + ".jpg";
+		String mImageName = "MI_" +  filename + ".jpg";
 		mediaFile = new File(mediaStorageDir.getPath() + File.separator
 				+ mImageName);
 		return mediaFile;
