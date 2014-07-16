@@ -3,58 +3,51 @@ package com.example.sudokusolver;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 
-/**
- * Implementation of the CCL(connected component algorithm) that identifies 
- * all the non-contiguous blobs of white pixels in the image
- * @author E Wong
- *
- */
 public class BlobExtraction {
 
-	private Bitmap bmp;
-	private int[][]label;
-    //holds the set number and the list of pixels in that set
-    //private Set<Integer, List<Point>> sets;
+	private Mat img;
+	List<Rect> blobs = new ArrayList<Rect>();
+    private int BLACK = 0;
     
-	public BlobExtraction(Bitmap bitmap){
-		bmp = bitmap;
-		label = new int[bitmap.getWidth()][bitmap.getHeight()];
-	}
-
-	public void blobExtract() {
-		int currentLabel = 1;
-
-		for (int i = 1; i < bmp.getWidth()-1; i++) {
-			for (int j = 1; j < bmp.getHeight()-1; j++) {
-				if (bmp.getPixel(i, j) == Color.WHITE) {
-					int num = checkNeighbors(i, j);
-					if (num == 0) {
-						label[i][j] = currentLabel;
-						currentLabel++;
-					} else {
-						label[i][j] = num;
-					}
-				}
-			}
-		}
-	}
-
-	public int checkNeighbors(int x, int y) {
-		int min = 10000;
-		for (int i = x - 1; i <= x + 1; i++) {
-			for (int j = y - 1; j <= y + 1; j++) {
-				if (i != x && j != y && bmp.getPixel(i, j) == Color.WHITE) {
-					if (label[i][j] != 0) {
-						if (label[j][j] < min) {
-							min = label[i][j];
-						}
-					}
-				}
-			}
-		}
-		if (min == 10000)
-			return 0;
-		else
-			return min;
-	}
+    public BlobExtraction(Mat mat){
+        img = mat;
+    }
+    
+    public void blobExtract(){
+        for(int y = 0; y < img.rows(); y++){
+            for(int x = 0; x < img.cols(); x++){
+                if(int)img.get(y,x)[0] != BLACK){
+                    Rect rect = new Rect();
+                    Scalar scBlack = new Scalar(0);
+                    Imgproc.floodFill(img, new Point(x,y), scBlack, rect, scBlack, scBlack, 8);
+                    
+                    if(isNumber(rect)){
+                        blobs.add(rect);
+                    }
+                }
+            }
+        }
+    }
+    
+    public List<Rect> getBlobs(){
+        return blobs;
+    }
+    
+    private boolean isNumber(Rect rect){
+        int cellWidth = Mat.cols()/9;
+        int cellHeight = Mat.rows()/9;
+        
+        //series of tests to ensure that rectangle contains a number
+        //(needs further testing)
+        if(rect.width > cellWidth || rect.height > cellHeight){
+            return false;
+        } 
+        if(cellWidth > cellHeight){
+            return false;
+        }
+        if(rect.height < cellHeight/3 || rect.width < cellWidth/5){
+            return false;
+        }
+        return true;
+    }
 }
