@@ -95,7 +95,7 @@ public class ImgManipulation {
 		Mat result = extractSudokuGrid();
 		removeGridlines(result);
 		//erodeBitmap();
-		storeImage(fixedBmp, "full");
+		FileSaver.storeImage(fixedBmp, "full");
 		
 		TessOCR ocr = new TessOCR(fixedBmp, mContext);
 		ocr.initOCR();
@@ -109,7 +109,7 @@ public class ImgManipulation {
 				int x = width * j;
 				int y = height * i;
 				nums[i][j] = Bitmap.createBitmap(fixedBmp, x, y, width, height);
-				storeImage(nums[i][j], i + "," + j);
+				FileSaver.storeImage(nums[i][j], i + "," + j);
 				if(findEmptyTile(nums[i][j], CONST_RATIO)){
 					Log.d(TAG_TILE_STATUS, i + "," + j + ": empty");
 				} else {
@@ -155,7 +155,7 @@ public class ImgManipulation {
 		Imgproc.dilate(mat, mat, kernel);
 		Imgproc.threshold(mat, mat, 128, 255, Imgproc.THRESH_BINARY);
 		fixedBmp = matToBitmap(mat);
-		storeImage(fixedBmp, "before");
+		FileSaver.storeImage(fixedBmp, "before");
 		try{
 			Point whitePoint = findFirstWhite(fixedBmp);
 			floodfill(whitePoint);
@@ -498,54 +498,4 @@ public class ImgManipulation {
 		Log.d("boundaries", x1 + "," + y1 + " " + x2 + "," + y2);
 		Core.line(m, start, end, new Scalar(255, 255, 255), 3);
 	}
-	
-	/**
-	 * stores bitmap to internal storage
-	 * @param image
-	 */
-	private void storeImage(Bitmap image, String filename) {
-		if (image == null){
-			Log.d("null bitmap", "storeImage");
-		}
-		
-		File pictureFile = getOutputMediaFile(filename);
-		Log.d(TAG_FILENAME, pictureFile.toString());
-		try {
-			FileOutputStream fos = new FileOutputStream(pictureFile);
-			image.compress(Bitmap.CompressFormat.PNG, 90, fos);
-			fos.close();
-		} catch (FileNotFoundException e) {
-			Log.d(TAG_ERROR_FILESAVE, "File not found: " + e.getMessage());
-		} catch (IOException e) {
-			Log.d(TAG_ERROR_FILESAVE, "Error accessing file: " + e.getMessage());
-		}
-	}
-
-	/** Create a File for saving an image or video */
-	private File getOutputMediaFile(String filename) {
-		// To be safe, you should check that the SDCard is mounted
-		// using Environment.getExternalStorageState() before doing this.
-		File mediaStorageDir = new File(
-				Environment.getExternalStorageDirectory() + "/Android/data/"
-						+ mContext.getPackageName() + "/Files");
-
-		// This location works best if you want the created images to be shared
-		// between applications and persist after your app has been uninstalled.
-
-		// Create the storage directory if it does not exist
-		if (!mediaStorageDir.exists()) {
-			if (!mediaStorageDir.mkdirs()) {
-				return null;
-			}
-		}
-		// Create a media file name
-		String timeStamp = new SimpleDateFormat("ddMMyyyy_HHmm")
-				.format(new Date());
-		File mediaFile;
-		String mImageName = "MI_" +  filename + ".jpg";
-		mediaFile = new File(mediaStorageDir.getPath() + File.separator
-				+ mImageName);
-		return mediaFile;
-	}
-
 }
