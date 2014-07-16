@@ -12,10 +12,17 @@ import android.util.Log;
 
 import com.googlecode.tesseract.android.TessBaseAPI;
 
+/**
+ * Handles OCR portion of application-- uses tess-two API to recognize digits
+ * @author E Wong
+ *
+ */
 public class TessOCR{
  
     private Bitmap mBitmap;
     private Context mContext;
+    private TessBaseAPI tessAPI;
+    
     public final String TRAINED_DATA_DIRECTORY = "tessdata/";
     public final String TRAINED_DATA_FILENAME = "eng.traineddata";
     private String DATA_PATH;
@@ -26,9 +33,9 @@ public class TessOCR{
      * constructor to obtain context+bitmap and initializes DATA_PATH needed for class methods
      **/ 
     public TessOCR(Bitmap bitmap, Context context){
-	mBitmap = bitmap;
-	mContext = context;
-	DATA_PATH = Environment.getExternalStorageDirectory() + "/Android/data/" + mContext.getPackageName() + "/Files/";
+    	mBitmap = bitmap;
+    	mContext = context;
+    	DATA_PATH = Environment.getExternalStorageDirectory() + "/Android/data/" + mContext.getPackageName() + "/Files/";
     }
     
     /**
@@ -36,12 +43,12 @@ public class TessOCR{
      * (which is required by tess-two API) and accesses tess API
      **/ 
     public void initOCR(){
-        int[][] grid = new int[9][9];
-        TessBaseAPI tessAPI = new TessBaseAPI();
+        //int[][] grid = new int[9][9];
+        tessAPI = new TessBaseAPI();
         copyTessFileToStorage();
         //datapath is in parent directory of tessdata
         tessAPI.init(DATA_PATH, "eng");
-        tessAPI.setImage(mBitmap);
+        //tessAPI.setImage(mBitmap);
         
         int width = mBitmap.getWidth() / 9;
         int height = mBitmap.getHeight() / 9;
@@ -58,9 +65,19 @@ public class TessOCR{
             }
         }
         */
-        String result = tessAPI.getUTF8Text();
-        Log.d("Results sudoku OCR", result);
-        tessAPI.end();
+        //String result = tessAPI.getUTF8Text();
+        //Log.d("Results sudoku OCR", result);
+        //tessAPI.end();
+    }
+    
+    public String doOCR(Bitmap bmp){
+    	tessAPI.setImage(bmp);
+    	String result = tessAPI.getUTF8Text();
+        return result;
+    }
+    
+    public void endTessOCR(){
+    	tessAPI.end();
     }
     
     /**

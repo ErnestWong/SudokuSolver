@@ -3,12 +3,18 @@ package com.example.sudokusolver;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 
+/**
+ * Implementation of the CCL(connected component algorithm) that identifies 
+ * all the non-contiguous blobs of white pixels in the image
+ * @author E Wong
+ *
+ */
 public class BlobExtraction {
 
 	private Bitmap bmp;
 	private int[][]label;
     //holds the set number and the list of pixels in that set
-    private Set<Integer, List<Point>> sets;
+    //private Set<Integer, List<Point>> sets;
     
 	public BlobExtraction(Bitmap bitmap){
 		bmp = bitmap;

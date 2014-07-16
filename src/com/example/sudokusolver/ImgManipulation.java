@@ -26,13 +26,20 @@ import android.graphics.Color;
 import android.os.Environment;
 import android.util.Log;
 
-@SuppressLint("DefaultLocale")
+
+/**
+ * Handles the image processing portion of the application-- receives raw bitmap from 
+ * PictureCallback and extracts the sudoku layout from image
+ * Uses OpenCV library
+ * @author E Wong
+ *
+ */
 public class ImgManipulation {
 
 	private Context mContext;
 	private Bitmap mBitmap;
 	private Bitmap fixedBmp;
-	private final float CONST_RATIO = (float) 0.05;
+	private final float CONST_RATIO = (float) 0.04;
 	public final int THRESHOLD = 50;
 	
 	public final String TAG_MAT_DIMENS = "Mat dimensions";
@@ -87,8 +94,11 @@ public class ImgManipulation {
 	public void doStoreBitmap() {
 		Mat result = extractSudokuGrid();
 		removeGridlines(result);
+		//erodeBitmap();
 		storeImage(fixedBmp, "full");
-		//TessOCR ocr = new TessOCR(fixedBmp, mContext);
+		
+		TessOCR ocr = new TessOCR(fixedBmp, mContext);
+		ocr.initOCR();
 		
 		//9x9 array to store each number
 		Bitmap[][] nums = new Bitmap[9][9];
@@ -96,21 +106,30 @@ public class ImgManipulation {
 		int height = fixedBmp.getHeight() / 9;
 		for(int i = 0; i < 9; i++){
 			for(int j = 0; j < 9; j++){
-				int x = width * i;
-				int y = height * j;
+				int x = width * j;
+				int y = height * i;
 				nums[i][j] = Bitmap.createBitmap(fixedBmp, x, y, width, height);
 				storeImage(nums[i][j], i + "," + j);
 				if(findEmptyTile(nums[i][j], CONST_RATIO)){
 					Log.d(TAG_TILE_STATUS, i + "," + j + ": empty");
 				} else {
-					Log.d(TAG_TILE_STATUS, i + "," + j + ": not empty");
+					String ans = ocr.doOCR(nums[i][j]);
+					Log.d(TAG_TILE_STATUS, i + "," + j + ": " + ans);
+					
 				}
 			}
 		}
 		
-		//ocr.initOCR();
+		ocr.endTessOCR();
 	}
 
+	private void erodeBitmap(){
+		Mat manip = bitmapToMat(fixedBmp);
+		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(3, 3));
+		Imgproc.erode(manip, manip, kernel);
+		fixedBmp = matToBitmap(manip);
+	}
+	
 	private boolean findEmptyTile(Bitmap bmp, float ratio){
 		int area = bmp.getWidth() * bmp.getHeight();
 		int totalWhite = 0;
@@ -132,10 +151,11 @@ public class ImgManipulation {
 	 * @param mat-- Mat containing image of sudoku grid
 	 */
 	private void removeGridlines(Mat mat){
-		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(3, 3));
+		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(5, 5));
 		Imgproc.dilate(mat, mat, kernel);
 		Imgproc.threshold(mat, mat, 128, 255, Imgproc.THRESH_BINARY);
 		fixedBmp = matToBitmap(mat);
+		storeImage(fixedBmp, "before");
 		try{
 			Point whitePoint = findFirstWhite(fixedBmp);
 			floodfill(whitePoint);

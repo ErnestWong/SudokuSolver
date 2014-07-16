@@ -8,6 +8,11 @@ import android.graphics.Rect;
 import android.util.Log;
 import android.view.View;
 
+/**
+ * Custom view to draw rectangle on preview screen
+ * @author E Wong
+ *
+ */
 public class RectangleView extends View{
 
 	private Context mContext;
