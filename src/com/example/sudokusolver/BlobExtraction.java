@@ -6,8 +6,8 @@ import android.graphics.Color;
 public class BlobExtraction {
 
 	private Mat img;
-	List<Rect> blobs = new ArrayList<Rect>();
-    private int BLACK = 0;
+	Queue<Rect> blobs = new LinkedList<Rect>();
+    	private int BLACK = 0;
     
     public BlobExtraction(Mat mat){
         img = mat;
@@ -31,10 +31,6 @@ public class BlobExtraction {
     
     public List<Rect> getBlobs(){
         return blobs;
-    }
-    
-    public int getNumBlobs(){
-    	return blobs.size();
     }
     
     private boolean isNumber(Rect rect){
