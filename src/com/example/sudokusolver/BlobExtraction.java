@@ -33,6 +33,10 @@ public class BlobExtraction {
         return blobs;
     }
     
+    public int getNumBlobs(){
+    	return blobs.size();
+    }
+    
     private boolean isNumber(Rect rect){
         int cellWidth = Mat.cols()/9;
         int cellHeight = Mat.rows()/9;
