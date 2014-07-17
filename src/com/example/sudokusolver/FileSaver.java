@@ -1,15 +1,32 @@
-public class FileSaver{
+package com.example.sudokusolver;
 
-  private FileSaver(){
-  
-  }
-  
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import android.graphics.Bitmap;
+import android.os.Environment;
+import android.util.Log;
+
+public class FileSaver {
+
+	public final static String TAG_FILENAME = "file name";
+	public final static String TAG_ERROR_FILESAVE = "File save error";
+
+	private FileSaver() {
+
+	}
+
 	/**
 	 * stores bitmap to internal storage
+	 * 
 	 * @param image
 	 */
 	public static void storeImage(Bitmap image, String filename) {
-		if (image == null){
+		if (image == null) {
 			Log.d("null bitmap", "storeImage");
 		}
 
@@ -47,7 +64,7 @@ public class FileSaver{
 		String timeStamp = new SimpleDateFormat("ddMMyyyy_HHmm")
 				.format(new Date());
 		File mediaFile;
-		String mImageName = "MI_" +  filename + ".jpg";
+		String mImageName = "MI_" + filename + ".jpg";
 		mediaFile = new File(mediaStorageDir.getPath() + File.separator
 				+ mImageName);
 		return mediaFile;

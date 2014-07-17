@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -19,10 +20,14 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Environment;
 import android.util.Log;
 
@@ -48,9 +53,7 @@ public class ImgManipulation {
 	public final String TAG_WHITE_POINT = "White point coorinates";
 	public final String TAG_TILE_STATUS = "tile status";
 	public final String TAG_HOUGHLINES = "HoughLines info";
-	public final String TAG_FILENAME = "file name";
 	public final String TAG_ERROR_FIND_GRID = "findGridArea error";
-	public final String TAG_ERROR_FILESAVE = "File save error";
 	public final String TAG_ERROR_FLOODFILL = "Floodfill setPixel error";
 
 	public ImgManipulation(Context context, Bitmap bitmap) {
@@ -100,11 +103,27 @@ public class ImgManipulation {
 		TessOCR ocr = new TessOCR(fixedBmp, mContext);
 		ocr.initOCR();
 
-        Mat fixedMat = bitmapToMat(fixedBmp);
-        BlobExtraction blobExt = new BlobExtraction(fixedMat);
-        blobExt.blobExtract();
-        Queue<Rect> blobs = getBlobs();
+		//Bitmap copy = Bitmap.createScaledBitmap(fixedBmp, fixedBmp.getWidth(), fixedBmp.getHeight(),  false);
+		
+		Mat tmp = bitmapToMat(fixedBmp);
+		FileSaver.storeImage(matToBitmap(tmp), "ffirstbefore");
+        BlobExtractv2 blobext = new BlobExtractv2(fixedBmp);
+        blobext.blobExtract();
+        Queue<Rect> numRects = blobext.getTileRects();
+        Bitmap newBmp = matToBitmap(tmp);
+        FileSaver.storeImage(newBmp, "laterFater");
+        int count = 0;
+        while(!numRects.isEmpty()){
+        	Rect r = numRects.remove();
+        	Log.d("rect dimens", "t: " + r.top + ", b:" + r.bottom + ",l:" + r.left + ",r:" + r.right);
+			Bitmap b = Bitmap.createBitmap(newBmp, r.left, r.top, r.right-r.left, r.bottom-r.top);
+			FileSaver.storeImage(b, "num " + count );
+			String ans = ocr.doOCR(b);
+            Log.d(TAG_TILE_STATUS, count + ", _ nonempty " + ans); 
+            count++;
+        }
         
+        /*
 		//9x9 array to store each number
 		Bitmap[][] nums = new Bitmap[9][9];
 		int width = fixedBmp.getWidth() / 9;
@@ -113,23 +132,20 @@ public class ImgManipulation {
 			for(int j = 0; j < 9; j++){
 				int x = width * j;
 				int y = height * i;
-				nums[i][j] = Bitmap.createBitmap(fixedBmp, x, y, width, height);
-				FileSaver.storeImage(nums[i][j], i + "," + j);
+				//nums[i][j] = Bitmap.createBitmap(fixedBmp, x, y, width, height);
+				//FileSaver.storeImage(nums[i][j], i + "," + j);
 				if(findEmptyTile(nums[i][j], CONST_RATIO)){
 					Log.d(TAG_TILE_STATUS, i + "," + j + ": empty");
 				} else {
-                    try{                    
-                        Mat subTile = fixedMat.submat(blobs.remove());
-                        String ans = ocr.doOCR(matToBitmap(subTile));
-                        Log.d(TAG_TILE_STATUS, i + "," + j + ": " + ans);
-                    }
-                    catch(Exception e){
-                        Log.d("empty queue at " + i + "," + j, e.toString());
-                    }
+					Rect r = numRects.remove();
+					Bitmap b = Bitmap.createBitmap(fixedBmp, r.top, r.left, r.right-r.left, r.bottom-r.top);
+					FileSaver.storeImage(b, "num" + i + "," + j);
+					String ans = ocr.doOCR(b);
+                    Log.d(TAG_TILE_STATUS, i + "," + j + ": nonempty " + ans); 
 				}
 			}
 		}
-
+        */
 		ocr.endTessOCR();
 	}
 
@@ -161,7 +177,7 @@ public class ImgManipulation {
 	 * @param mat-- Mat containing image of sudoku grid
 	 */
 	private void removeGridlines(Mat mat){
-		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(5, 5));
+		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(3, 3));
 		Imgproc.dilate(mat, mat, kernel);
 		Imgproc.threshold(mat, mat, 128, 255, Imgproc.THRESH_BINARY);
 		fixedBmp = matToBitmap(mat);
@@ -193,7 +209,7 @@ public class ImgManipulation {
 			Point p = q.remove();
 
 			if(!checked[(int)p.x][(int)p.y]){
-				if(fixedBmp.getPixel((int)p.x, (int)p.y) == Color.WHITE && !outOfBounds(p) && p.x > 0 && p.y > 0){
+				if(fixedBmp.getPixel((int)p.x, (int)p.y) == Color.WHITE && !outOfBounds(p)){
 					fixedBmp.setPixel((int)p.x, (int)p.y, Color.BLACK);
 					q.add(new Point(p.x-1, p.y-1));
 					q.add(new Point(p.x-1, p.y));
@@ -235,7 +251,7 @@ public class ImgManipulation {
 	 * @return
 	 */
 	private boolean outOfBounds(Point point){
-		if(point.x >= fixedBmp.getWidth()-2 || point.y >= fixedBmp.getHeight()-2){
+		if(point.x >= fixedBmp.getWidth()-2 || point.y >= fixedBmp.getHeight()-2 || point.x <= 0 || point.y <= 0){
 			return true;
 		} else {
 			return false;
