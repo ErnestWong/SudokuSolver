@@ -20,15 +20,17 @@ public class BlobExtractv2 {
 	private Bitmap fixedBmp;
 	private int tileWidth;
 	private int tileHeight;
-	private final int BUFFER = 0;
+	private static final int BUFFER = 0;
+    private static final int GAP;
 	private Queue<Rect> tileRects = new LinkedList<Rect>();
-	
+
 	public BlobExtractv2(Bitmap bmp){
 		fixedBmp = bmp;
 		tileWidth = fixedBmp.getWidth()/9;
 		tileHeight = fixedBmp.getHeight()/9;
+        GAP = fixedBmp.getWidth()/10;
 	}
-	
+
 	public void blobExtract(){
 		Log.d("extract", "extracting");
 		int count = 0;
@@ -38,27 +40,22 @@ public class BlobExtractv2 {
 				if(fixedBmp.getPixel(x,y) == Color.BLACK){
 					continue;
 				}
-				
+
 				Rect r = floodfill(new Point(x,y));
 				if(r != null){
 					numcount++;
 					tileRects.add(r);
 				}
-				
+
 				count++;
-				
-					
-				
+
+
+
 			}
 		}
 		Log.d("number of blobs", count + "," + numcount);
 	}
-	
-	public Queue<Rect> getTileRects(){
-		return tileRects;
-	}
-	
-	
+
 	private Rect floodfill(Point start){
 		//keeps track of checked pixels
 		boolean[][] checked = new boolean[fixedBmp.getWidth()][fixedBmp.getHeight()];
@@ -76,7 +73,7 @@ public class BlobExtractv2 {
 				if(fixedBmp.getPixel((int)p.x, (int)p.y) == Color.WHITE && !outOfBounds(p)){
 					xCoords.add((int)p.x);
 					yCoords.add((int)p.y);
-					
+
 					fixedBmp.setPixel((int)p.x, (int)p.y, Color.BLACK);
 					q.add(new Point(p.x-1, p.y-1));
 					q.add(new Point(p.x-1, p.y));
@@ -90,10 +87,10 @@ public class BlobExtractv2 {
 			}
 			checked[(int)p.x][(int)p.y] = true;
 		}
-		
+
 		return isNumber(xCoords, yCoords);
 	}
-	
+
 	/**
 	 * check if pixel is out of bounds from bitmap
 	 * @param point-- target pixel
@@ -106,9 +103,57 @@ public class BlobExtractv2 {
 			return false;
 		}
 	}
-	
+
+    private Queue<Rect> sortRects(List<Rect> rects){
+        List <Rect> tmp = cloneRect(rects);
+        Queue<Rect> sorted = new LinkedList<Rect>(tmp.size());
+        while(!tmp.isEmpty()){
+            Rect min = tmp.get(0);
+            for(int i = 0; i < tmp.size(); i++){
+                if(compareRect(min, tmp.get(i))){
+                    min = tmp.get(i);
+                }
+            }
+            tmp.remove(min);
+            sorted.add(min);
+        }
+    }
+    
+    public Queue<Rect> getTileRects(){
+        return sortRects(tileRects);
+    }
+    
+    private List<Rect> cloneRect(List<Rect> original){
+        List<Rect> tmpRect = new ArrayList<Rect>(rects.size());
+        for(int i = 0; i < rects.size(); i++){
+            tmpRect.add(rects.get(i));
+        }
+        return tmpRect;
+    }
+    
+    //returns true if r1 > r2, false if r1 < r2
+    private boolean compareRect(Rect r1, Rect r2){
+        int n1 = r1.centerY();
+        int n2 = r2.centerY();
+        if(n1 > n2+GAP){
+            return true;
+        }
+        else if(n2 > n1+GAP){
+            return false;
+        }
+        else{
+            if(r1.centerX() > r2.centreX()){
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+    
+    }
+    
 	private Rect isNumber(List<Integer> xCoords, List<Integer> yCoords){
-		
+
 		if(xCoords.size() == 0 || yCoords.size() == 0){
 			return null;
 		}
@@ -118,19 +163,19 @@ public class BlobExtractv2 {
 		int height = yCoords.get(yCoords.size()-1) - yCoords.get(0) + BUFFER;
 		int x = xCoords.get(0) - BUFFER;
 		int y = yCoords.get(0) - BUFFER;
-		
+
 		if(width > tileWidth || height > tileHeight){
 			return null;
 		}
-		
+
 		if(width > height){
 			return null;
 		}
-		
+
 		if(height < tileHeight / 3 || width < tileWidth / 5){
 			return null;
 		}
-		
+
 		return new Rect(x, y, x+width, y+height);
 	}
 }
