@@ -46,12 +46,14 @@ public class TessOCR{
         //int[][] grid = new int[9][9];
         tessAPI = new TessBaseAPI();
         copyTessFileToStorage();
+        
         //datapath is in parent directory of tessdata
         tessAPI.init(DATA_PATH, "eng");
+        tessAPI.setVariable("tessedit_char_whitelist", "0123456789");
         //tessAPI.setImage(mBitmap);
         
-        int width = mBitmap.getWidth() / 9;
-        int height = mBitmap.getHeight() / 9;
+        //int width = mBitmap.getWidth() / 9;
+        //int height = mBitmap.getHeight() / 9;
         
         /*
         for(int i = 0; i < 9; i++){

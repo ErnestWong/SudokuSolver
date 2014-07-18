@@ -21,16 +21,20 @@ public class BlobExtractv2 {
 	private int tileWidth;
 	private int tileHeight;
 	private static final int BUFFER = 0;
-    private static final int GAP;
-	private Queue<Rect> tileRects = new LinkedList<Rect>();
+    private static int GAP;
+	private List<Rect> tileRects = new ArrayList<Rect>();
 
 	public BlobExtractv2(Bitmap bmp){
 		fixedBmp = bmp;
 		tileWidth = fixedBmp.getWidth()/9;
 		tileHeight = fixedBmp.getHeight()/9;
-        GAP = fixedBmp.getWidth()/10;
+        GAP = tileHeight/2;
 	}
 
+	/**
+	 * performs blob extraction and stores found blobs in tileRects 
+	 * Must call this method before getTileRects()
+	 */
 	public void blobExtract(){
 		Log.d("extract", "extracting");
 		int count = 0;
@@ -56,6 +60,11 @@ public class BlobExtractv2 {
 		Log.d("number of blobs", count + "," + numcount);
 	}
 
+	/**
+	 * performs floodfill at start point and fills connected whitespace to black
+	 * @param start
+	 * @return
+	 */
 	private Rect floodfill(Point start){
 		//keeps track of checked pixels
 		boolean[][] checked = new boolean[fixedBmp.getWidth()][fixedBmp.getHeight()];
@@ -104,9 +113,15 @@ public class BlobExtractv2 {
 		}
 	}
 
+	/**
+	 * uses selection sort on input rects and outputs sorted queue
+	 * @param rects-- input list of Rect
+	 * @return
+	 */
     private Queue<Rect> sortRects(List<Rect> rects){
         List <Rect> tmp = cloneRect(rects);
-        Queue<Rect> sorted = new LinkedList<Rect>(tmp.size());
+        Queue<Rect> sorted = new LinkedList<Rect>();
+        
         while(!tmp.isEmpty()){
             Rect min = tmp.get(0);
             for(int i = 0; i < tmp.size(); i++){
@@ -117,32 +132,50 @@ public class BlobExtractv2 {
             tmp.remove(min);
             sorted.add(min);
         }
+        return sorted;
     }
     
+    /**
+     * returns sorted queue of Rect objects
+     * @return
+     */
     public Queue<Rect> getTileRects(){
         return sortRects(tileRects);
     }
     
+    /**
+     * returns deep copy clone of list
+     * @param original-- input list
+     * @return
+     */
     private List<Rect> cloneRect(List<Rect> original){
-        List<Rect> tmpRect = new ArrayList<Rect>(rects.size());
-        for(int i = 0; i < rects.size(); i++){
-            tmpRect.add(rects.get(i));
+        List<Rect> tmpRect = new ArrayList<Rect>(original.size());
+        for(int i = 0; i < original.size(); i++){
+            tmpRect.add(original.get(i));
         }
         return tmpRect;
     }
     
-    //returns true if r1 > r2, false if r1 < r2
+    /**
+     * helper method for sortRects-- sorts top left to bottom right with a 
+     * buffer region to distinguish separate rows
+     * @param r1
+     * @param r2
+     * @return true if r1 > r2, false if r1 < r2
+     */
     private boolean compareRect(Rect r1, Rect r2){
         int n1 = r1.centerY();
         int n2 = r2.centerY();
+        //check to see if r1 and r2 are in different rows(y value)
         if(n1 > n2+GAP){
             return true;
         }
         else if(n2 > n1+GAP){
             return false;
         }
+        //check column (x value) if same row
         else{
-            if(r1.centerX() > r2.centreX()){
+            if(r1.centerX() > r2.centerX()){
                 return true;
             }
             else{
@@ -152,26 +185,41 @@ public class BlobExtractv2 {
     
     }
     
+    /**
+     * checks if Rect encloses a number; uses series of tests to determine
+     * @param xCoords-- list containing x coordinate pixels in rect
+     * @param yCoords-- list containing y coordinate pixels in rect
+     * @return null if not number, non-null otherwise
+     */
 	private Rect isNumber(List<Integer> xCoords, List<Integer> yCoords){
 
+		//if pixels are empty return null
 		if(xCoords.size() == 0 || yCoords.size() == 0){
 			return null;
 		}
+		//sort list of pixels; first and last of each list will be the bounds of rect 
 		Collections.sort(xCoords);
 		Collections.sort(yCoords);
-		int width = xCoords.get(xCoords.size()-1) - xCoords.get(0) + BUFFER;
-		int height = yCoords.get(yCoords.size()-1) - yCoords.get(0) + BUFFER;
-		int x = xCoords.get(0) - BUFFER;
-		int y = yCoords.get(0) - BUFFER;
+		int width = xCoords.get(xCoords.size()-1) - xCoords.get(0);
+		int height = yCoords.get(yCoords.size()-1) - yCoords.get(0);
+		int x = xCoords.get(0);
+		int y = yCoords.get(0);
+		if(x-BUFFER >= 0) x -= BUFFER;
+		if(y-BUFFER >= 0) y -= BUFFER;
+		if(width+BUFFER+x < fixedBmp.getWidth()) width += BUFFER;
+		if(height+BUFFER+y < fixedBmp.getHeight()) height += BUFFER;
 
+		//check if rect dimensions is greater than a tile's
 		if(width > tileWidth || height > tileHeight){
 			return null;
 		}
 
+		//check this because a number rect should be narrow
 		if(width > height){
 			return null;
 		}
 
+		//arbitrary parameters to check if rect is too small to be number
 		if(height < tileHeight / 3 || width < tileWidth / 5){
 			return null;
 		}

@@ -44,7 +44,7 @@ public class ImgManipulation {
 	private Context mContext;
 	private Bitmap mBitmap;
 	private Bitmap fixedBmp;
-	private final float CONST_RATIO = (float) 0.04;
+	private final float CONST_RATIO = (float) 0.06;
 	public final int THRESHOLD = 50;
 
 	public final String TAG_MAT_DIMENS = "Mat dimensions";
@@ -103,19 +103,22 @@ public class ImgManipulation {
 		TessOCR ocr = new TessOCR(fixedBmp, mContext);
 		ocr.initOCR();
 
-		//Bitmap copy = Bitmap.createScaledBitmap(fixedBmp, fixedBmp.getWidth(), fixedBmp.getHeight(),  false);
+		
 		
 		Mat tmp = bitmapToMat(fixedBmp);
-		FileSaver.storeImage(matToBitmap(tmp), "ffirstbefore");
+		
         BlobExtractv2 blobext = new BlobExtractv2(fixedBmp);
         blobext.blobExtract();
         Queue<Rect> numRects = blobext.getTileRects();
+        
         Bitmap newBmp = matToBitmap(tmp);
         FileSaver.storeImage(newBmp, "laterFater");
+        
         int count = 0;
+        
         while(!numRects.isEmpty()){
         	Rect r = numRects.remove();
-        	Log.d("rect dimens", "t: " + r.top + ", b:" + r.bottom + ",l:" + r.left + ",r:" + r.right);
+        	
 			Bitmap b = Bitmap.createBitmap(newBmp, r.left, r.top, r.right-r.left, r.bottom-r.top);
 			FileSaver.storeImage(b, "num " + count );
 			String ans = ocr.doOCR(b);
@@ -126,34 +129,49 @@ public class ImgManipulation {
         /*
 		//9x9 array to store each number
 		Bitmap[][] nums = new Bitmap[9][9];
-		int width = fixedBmp.getWidth() / 9;
-		int height = fixedBmp.getHeight() / 9;
+		int width = newBmp.getWidth() / 9;
+		int height = newBmp.getHeight() / 9;
+		int c = 0;
 		for(int i = 0; i < 9; i++){
 			for(int j = 0; j < 9; j++){
 				int x = width * j;
 				int y = height * i;
-				//nums[i][j] = Bitmap.createBitmap(fixedBmp, x, y, width, height);
+				
+				
+				nums[i][j] = Bitmap.createBitmap(newBmp, x, y, width, height);
 				//FileSaver.storeImage(nums[i][j], i + "," + j);
 				if(findEmptyTile(nums[i][j], CONST_RATIO)){
 					Log.d(TAG_TILE_STATUS, i + "," + j + ": empty");
+					FileSaver.storeImage(nums[i][j], i + "," + j + "EMPTY");
 				} else {
+					Log.d(TAG_TILE_STATUS, i + "," + j + ": nonempty");
+					FileSaver.storeImage(nums[i][j], i + "," + j + "NOTEMPTY");
+					c++;
+					
 					Rect r = numRects.remove();
-					Bitmap b = Bitmap.createBitmap(fixedBmp, r.top, r.left, r.right-r.left, r.bottom-r.top);
-					FileSaver.storeImage(b, "num" + i + "," + j);
+					Bitmap b = Bitmap.createBitmap(newBmp, r.left, r.top, r.right-r.left, r.bottom-r.top);
+					//Mat tmpB = bitmapToMat(b);
+					//Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(5, 5));
+					//Imgproc.dilate(tmpB, tmpB, kernel);
+					//b = matToBitmap(tmpB);
+					FileSaver.storeImage(b, c+ "num " + i + "," + j);
 					String ans = ocr.doOCR(b);
-                    Log.d(TAG_TILE_STATUS, i + "," + j + ": nonempty " + ans); 
+		            Log.d(TAG_TILE_STATUS + "nonempty",count + ": "+ i + "," + j + ", "+ ans); 
+		            
 				}
 			}
 		}
+		
+		Log.d("count", c + "," + numRects.size());
         */
 		ocr.endTessOCR();
 	}
 
-	private void erodeBitmap(){
-		Mat manip = bitmapToMat(fixedBmp);
+	private void erodeMat(Mat mat){
+		//Mat manip = bitmapToMat(fixedBmp);
 		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(3, 3));
-		Imgproc.erode(manip, manip, kernel);
-		fixedBmp = matToBitmap(manip);
+		Imgproc.erode(mat, mat, kernel);
+		//fixedBmp = matToBitmap(manip);
 	}
 
 	private boolean findEmptyTile(Bitmap bmp, float ratio){
