@@ -43,7 +43,6 @@ public class ImgManipulation {
 
 	private Context mContext;
 	private Bitmap mBitmap;
-	private Bitmap fixedBmp;
 	private final float CONST_RATIO = (float) 0.06;
 	public final int THRESHOLD = 50;
 
@@ -96,30 +95,28 @@ public class ImgManipulation {
 	 */
 	public void doStoreBitmap() {
 		Mat result = extractSudokuGrid();
-		removeGridlines(result);
+		dilateMat(result);
+        Imgproc.threshold(result, result, 128, 255, Imgproc.THRESH_BINARY);
 		//erodeBitmap();
-		FileSaver.storeImage(fixedBmp, "full");
-
-		TessOCR ocr = new TessOCR(fixedBmp, mContext);
-		ocr.initOCR();
-
-		
-		
-		Mat tmp = bitmapToMat(fixedBmp);
-		
-        BlobExtractv2 blobext = new BlobExtractv2(fixedBmp);
-        blobext.blobExtract();
-        Queue<Rect> numRects = blobext.getTileRects();
         
-        Bitmap newBmp = matToBitmap(tmp);
-        FileSaver.storeImage(newBmp, "laterFater");
+        Bitmap bmp = matToBitmap(result);
+		FileSaver.storeImage(bmp, "full");
+
+        BlobExtractv2 blobext = new BlobExtractv2(bmp);
+        blobext.blobExtract();
+        
+        Queue<Rect> numRects = blobext.getTileRects();
+        bmp = blobext.getFixedBitmap();
+        
+        FileSaver.storeImage(bmp, "laterFater");
         
         int count = 0;
-        
+        TessOCR ocr = new TessOCR(bmp, mContext);
+		ocr.initOCR();
         while(!numRects.isEmpty()){
         	Rect r = numRects.remove();
         	
-			Bitmap b = Bitmap.createBitmap(newBmp, r.left, r.top, r.right-r.left, r.bottom-r.top);
+			Bitmap b = Bitmap.createBitmap(bmp, r.left, r.top, r.right-r.left, r.bottom-r.top);
 			FileSaver.storeImage(b, "num " + count );
 			String ans = ocr.doOCR(b);
             Log.d(TAG_TILE_STATUS, count + ", _ nonempty " + ans); 
@@ -167,9 +164,12 @@ public class ImgManipulation {
 		ocr.endTessOCR();
 	}
 
-	private void erodeMat(Mat mat){
+    /**
+    *erodes mat
+    **/
+	private void erodeMat(Mat mat, int factor){
 		//Mat manip = bitmapToMat(fixedBmp);
-		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(3, 3));
+		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(factor, factor));
 		Imgproc.erode(mat, mat, kernel);
 		//fixedBmp = matToBitmap(manip);
 	}
@@ -191,90 +191,15 @@ public class ImgManipulation {
 		}
 	}
 	/**
-	 * removes the gridlines from Mat image of sudoku grid
+	 *dilates mat 
 	 * @param mat-- Mat containing image of sudoku grid
 	 */
-	private void removeGridlines(Mat mat){
-		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(3, 3));
+	private void dilateMat(Mat mat, int factor){
+		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(factor, factor));
 		Imgproc.dilate(mat, mat, kernel);
-		Imgproc.threshold(mat, mat, 128, 255, Imgproc.THRESH_BINARY);
-		fixedBmp = matToBitmap(mat);
-		FileSaver.storeImage(fixedBmp, "before");
-		try{
-			Point whitePoint = findFirstWhite(fixedBmp);
-			floodfill(whitePoint);
-			Log.d("Completed Gridlines", whitePoint.x + "," + whitePoint.y);
-		}
-		catch(Exception e){
-			Log.d(TAG_ERROR_FLOODFILL, e.toString());
-		}
 	}
 
-	/**
-	 * method that uses floodfill algorithm to remove contiguous gridlines
-	 * @param start-- white pixel on the bitmap to start the algorithm
-	 */
-	private void floodfill(Point start){
-		//keeps track of checked pixels
-		boolean[][] checked = new boolean[fixedBmp.getWidth()][fixedBmp.getHeight()];
 
-		//queue of points to store the pixels; add initial pixel
-		Queue<Point> q = new LinkedList<Point>();
-		q.add(start);
-
-		//remove pixel and check adjacent pixels until queue is empty
-		while(!q.isEmpty()){
-			Point p = q.remove();
-
-			if(!checked[(int)p.x][(int)p.y]){
-				if(fixedBmp.getPixel((int)p.x, (int)p.y) == Color.WHITE && !outOfBounds(p)){
-					fixedBmp.setPixel((int)p.x, (int)p.y, Color.BLACK);
-					q.add(new Point(p.x-1, p.y-1));
-					q.add(new Point(p.x-1, p.y));
-					q.add(new Point(p.x-1, p.y+1));
-					q.add(new Point(p.x, p.y-1));
-					q.add(new Point(p.x, p.y+1));
-					q.add(new Point(p.x+1, p.y-1));
-					q.add(new Point(p.x+1, p.y));
-					q.add(new Point(p.x+1, p.y+1));
-				}
-			}
-			checked[(int)p.x][(int)p.y] = true;
-		}
-	}
-
-	/**
-	 * finds first white pixel on the bitmap (will be a gridline)
-	 * @param bmp-- source bitmap image
-	 * @return
-	 */
-	private Point findFirstWhite(Bitmap bmp){
-		for(int i = 1; i < bmp.getWidth(); i++){
-			for(int j = 1; j < bmp.getHeight(); j++){
-				if(bmp.getPixel(i, j) == Color.WHITE){
-					Point p = new Point(i,j);
-
-					String pointInfo = String.format("%d,%d", (int)p.x, (int)p.y);
-					Log.d(TAG_WHITE_POINT, pointInfo);
-					return p;
-				}
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * check if pixel is out of bounds from bitmap
-	 * @param point-- target pixel
-	 * @return
-	 */
-	private boolean outOfBounds(Point point){
-		if(point.x >= fixedBmp.getWidth()-2 || point.y >= fixedBmp.getHeight()-2 || point.x <= 0 || point.y <= 0){
-			return true;
-		} else {
-			return false;
-		}
-	}
 
 	/**
 	 * performs OpenCV image manipulations to extract and undistort sudoku puzzle from image
