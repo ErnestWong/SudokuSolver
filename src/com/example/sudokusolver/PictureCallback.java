@@ -34,7 +34,7 @@ public class PictureCallback implements Camera.PictureCallback {
 		if (data != null) {
 			try{	
 				
-				Bitmap fullbmp = decodeByteAndScale(data, 2);
+				Bitmap fullbmp = decodeByteAndScale(data, 5);
 				//BitmapRegionDecoder regionDecoder = BitmapRegionDecoder.newInstance(data, 0, data.length, true);
 				//Rect r = findROI(fullbmp);
  				//Bitmap bmp = regionDecoder.decodeRegion(r, null);
