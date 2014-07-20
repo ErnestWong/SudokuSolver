@@ -67,8 +67,11 @@ public class ImgManipulation {
 	 */
 	public void doStoreBitmap() {
 		Mat result = ImgManipUtil.extractSudokuGrid(mBitmap);
+		Imgproc.cvtColor(result, result, Imgproc.COLOR_BGR2GRAY);
+		Imgproc.adaptiveThreshold(result, result, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 11, 2);
+		FileSaver.storeImage(ImgManipUtil.matToBitmap(result), "threshold");
 		//ImgManipUtil.dilateMat(result, 3);
-        Imgproc.threshold(result, result, 128, 255, Imgproc.THRESH_BINARY);
+        //Imgproc.threshold(result, result, 128, 255, Imgproc.THRESH_BINARY);
 		//erodeBitmap();
         
         Bitmap bmp = ImgManipUtil.matToBitmap(result);

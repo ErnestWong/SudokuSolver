@@ -250,7 +250,7 @@ public class BlobExtractv2 {
 		}
 
 		// arbitrary parameters to check if rect is too small to be number
-		if (height < tileHeight / 3 || width < tileWidth / 5) {
+		if (height < tileHeight / 3 || width < tileWidth / 6) {
 			return null;
 		}
 

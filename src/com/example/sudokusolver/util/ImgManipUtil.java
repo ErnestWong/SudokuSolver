@@ -73,21 +73,27 @@ public class ImgManipUtil {
 	 */
 	public static Mat extractSudokuGrid(Bitmap bitmap){
 		//convert source bitmap to mat; use canny operation
-		Mat m = bitmapToMat(bitmap);
-		Imgproc.Canny(m, m, 50, 200);
+		Mat clean = bitmapToMat(bitmap);
+		Mat edges = new Mat(clean.size(), clean.type());
+		Imgproc.Canny(clean, edges, 50, 200);
 
 		//trim external noise to localize the sudoku puzzle and stores in bmp then m2
-		Bitmap bmp = findGridArea(matToBitmap(m));
-		Mat m2 = bitmapToMat(bmp);
-		bmp.recycle();
-		Imgproc.cvtColor(m2, m2, Imgproc.COLOR_RGB2GRAY);
-
+		int[] bounds = findGridBounds(edges);
+		int left = bounds[0];
+		int right = bounds[1];
+		int top = bounds[2];
+		int bot = bounds[3];
+		
+		edges = edges.submat(top, bot, left, right);
+		clean = clean.submat(top, bot, left, right);
+		
 		//uses houghlines to find lines in the image; sort them by horizontal/vertical
 		Mat lines = new Mat();
 		List<double[]> horizontalLines = new ArrayList<double[]>();
 		List<double[]> verticalLines = new ArrayList<double[]>();
 
-		Imgproc.HoughLinesP(m2, lines, 1, Math.PI/180, 150);
+		Imgproc.HoughLinesP(edges, lines, 1, Math.PI/180, 150);
+
 		for(int i = 0; i < lines.cols(); i++){
 			double[] line = lines.get(0, i);
 			double x1 = line[0];
@@ -147,8 +153,11 @@ public class ImgManipUtil {
 		Point topRight = findCorner(topLine, rightLine);
 		Point bottomRight = findCorner(bottomLine, rightLine);
 
-		Mat result = fixPerspective(topLeft, topRight, bottomLeft, bottomRight, m2);
-		return result;
+		edges = fixPerspective(topLeft, topRight, bottomLeft, bottomRight, edges);
+		clean = fixPerspective(topLeft, topRight, bottomLeft, bottomRight, clean);
+		FileSaver.storeImage(matToBitmap(edges), "edges");
+		FileSaver.storeImage(matToBitmap(clean), "clean");
+		return clean;
 	}
 	
 	/**
@@ -217,7 +226,7 @@ public class ImgManipUtil {
 	 * @param source source Mat
 	 * @return
 	 */
-	private static Mat fixPerspective(Point upLeft, Point upRight, Point downLeft, Point downRight, Mat source){
+	public static Mat fixPerspective(Point upLeft, Point upRight, Point downLeft, Point downRight, Mat source){
 		List<Point> src = new ArrayList<Point>();
 		List<Point> dest = new ArrayList<Point>();
 		Mat result = new Mat(source.size(), source.type());
@@ -278,28 +287,40 @@ public class ImgManipUtil {
 	/**
 	 * trims the bitmap to contain only the sudoku grid
 	 * @param bmp source bitmap image
-	 * @return trimmed bitmap
+	 * @return int array containing bounds-- [0]=left, [1]=right, [2]=top, [3]=bot
 	 */
-	private static Bitmap findGridArea(Bitmap bmp){
+	public static int[] findGridBounds(Mat mat){
+		int[] bounds = new int[4];
 		//find the four general edges of the sudoku grid; 5 pixel buffer region 
 		//in case any part of the grid gets cut off
+		Bitmap bmp = matToBitmap(mat);
 		int left = findBorders(1, bmp) - 5;
 		int right = findBorders(2, bmp) + 5;
 		int top = findBorders(3, bmp) - 5;
 		int bot = findBorders(4, bmp) + 5;
 
+		bounds[0] = left;
+		bounds[1] = right;
+		bounds[2] = top;
+		bounds[3] = bot;
+		
+		return bounds;
+		/*
 		//if sides differ by more than threshold amount of pixels, then 
 		//throw error since area is not square
 		if(Math.abs(right - left - (bot - top)) > THRESHOLD){
 			Log.d(TAG_ERROR_FIND_GRID, "not square");
 		}
 
-		Bitmap subBmp = Bitmap.createBitmap(bmp, left, top, right-left, bot-top);
-
+		//Bitmap subBmp = Bitmap.createBitmap(bmp, left, top, right-left, bot-top);
+		Mat subMat = mat.submat(top, bot, left, right);
 		String subMatInfo = String.format("left: %d, right: %d, top: %d, bot: %d", left, right, top, bot);
 		Log.d(TAG_SUBMAT_DIMENS, subMatInfo);
 
-		return subBmp;
+		return subMat;
+		//return subBmp;
+		 * *
+		 */
 	}
 
 	/**
