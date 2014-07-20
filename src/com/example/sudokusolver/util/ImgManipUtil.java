@@ -30,17 +30,20 @@ public class ImgManipUtil {
 	public static final String TAG_ERROR_FIND_GRID = "findGridArea error";
 	public static final String TAG_ERROR_FLOODFILL = "Floodfill setPixel error";
 
+	private ImgManipUtil(){
+		
+	}
 	/**
 	 * converts bitmap to single channel 8 bit Mat
-	 * @param bmp-- bitmap to convert
-	 * @return
+	 * @param bmp bitmap to convert
+	 * @return Mat of same size as bmp; 8 channel single bit
 	 */
 	public static Mat bitmapToMat(Bitmap bmp) {
 		Mat mat = new Mat(bmp.getHeight(), bmp.getWidth(), CvType.CV_8UC1);
 		Utils.bitmapToMat(bmp, mat);
 
 		String matInfo = String.format("cols: %d, rows: %d", mat.cols(),
-				mat.rows());
+				mat.rows(), mat.channels());
 		Log.d(TAG_MAT_DIMENS, matInfo);
 
 		return mat;
@@ -48,8 +51,8 @@ public class ImgManipUtil {
 
 	/**
 	 * converts mat to RGB bitmap
-	 * @param mat-- mat to convert
-	 * @return
+	 * @param mat mat to convert
+	 * @return bitmap of same size as mat, in ARGB8888 format
 	 */
 	public static Bitmap matToBitmap(Mat mat) {
 		Bitmap bmp = Bitmap.createBitmap(mat.cols(), mat.rows(),
@@ -65,7 +68,8 @@ public class ImgManipUtil {
 
 	/**
 	 * performs OpenCV image manipulations to extract and undistort sudoku puzzle from image
-	 * @return-- Mat image of fixed puzzle
+	 * @param bitmap source bitmap
+	 * @return Mat image of fixed puzzle
 	 */
 	public static Mat extractSudokuGrid(Bitmap bitmap){
 		//convert source bitmap to mat; use canny operation
@@ -148,7 +152,9 @@ public class ImgManipUtil {
 	}
 	
 	/**
-	 * erodes mat
+	 * performs openCV erosion to source mat
+	 * @param mat source on which to perform erosion
+	 * @param factor kernel size
 	 **/
 	public static void erodeMat(Mat mat, int factor) {
 		// Mat manip = bitmapToMat(fixedBmp);
@@ -159,8 +165,9 @@ public class ImgManipUtil {
 	}
 
 	/**
-	 * dilates mat
-	 * @param mat-- Mat containing image of sudoku grid
+	 * performs openCV dilation to source mat
+	 * @param mat source on which to perform dilation 
+	 * @param factor kernel size
 	 */
 	public static void dilateMat(Mat mat, int factor) {
 		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS,
@@ -169,12 +176,45 @@ public class ImgManipUtil {
 	}
 	
 	/**
+	 * performs openCV close operation to source mat
+	 * @param mat source on which to perform operation
+	 * @param factor kernel size
+	 */
+	public static void closeMat(Mat mat, int factor){
+		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS,
+				new Size(factor, factor));
+		Imgproc.morphologyEx(mat, mat, Imgproc.MORPH_CLOSE, kernel);
+	}
+	
+	/**
+	 * determines if bitmap contains a number 
+	 * @param bmp source bitmap
+	 * @param ratio percentage of the bitmap that must be white
+	 * @return true if empty, false otherwise
+	 */
+	public static boolean findEmptyTile(Bitmap bmp, float ratio){
+		int area = bmp.getWidth() * bmp.getHeight();
+		int totalWhite = 0;
+		for(int i = 0; i < bmp.getWidth(); i++){
+			for(int j = 0; j < bmp.getHeight(); j++){
+				if(bmp.getPixel(i,j) == Color.WHITE){
+					totalWhite++;
+				}
+			}
+		}
+		if(totalWhite > ratio * area){
+			return false;
+		} else {
+			return true;
+		}
+	}
+	/**
 	 * returns undistorted version of Mat using transformation from OpenCV library
-	 * @param upLeft-- top left corner coordinates
-	 * @param upRight-- top right corner coordinates
-	 * @param downLeft-- bottom left corner coordinates
-	 * @param downRight-- bottom right corner coordinates
-	 * @param source-- source Mat
+	 * @param upLeft top left corner coordinates
+	 * @param upRight top right corner coordinates
+	 * @param downLeft bottom left corner coordinates
+	 * @param downRight bottom right corner coordinates
+	 * @param source source Mat
 	 * @return
 	 */
 	private static Mat fixPerspective(Point upLeft, Point upRight, Point downLeft, Point downRight, Mat source){
@@ -213,9 +253,9 @@ public class ImgManipUtil {
 
 	/**
 	 * returns point of intersection between two lines
-	 * @param l1
-	 * @param l2
-	 * @return
+	 * @param l1 array containing x1, y1, x2, y2
+	 * @param l2 array containing x1, y1, x2, y2
+	 * @return Point of intersection between two lines
 	 */
 	private static Point findCorner(double[]l1, double[]l2){
 		double x1 = l1[0];
@@ -237,8 +277,8 @@ public class ImgManipUtil {
 
 	/**
 	 * trims the bitmap to contain only the sudoku grid
-	 * @param bmp
-	 * @return
+	 * @param bmp source bitmap image
+	 * @return trimmed bitmap
 	 */
 	private static Bitmap findGridArea(Bitmap bmp){
 		//find the four general edges of the sudoku grid; 5 pixel buffer region 
@@ -265,9 +305,9 @@ public class ImgManipUtil {
 	/**
 	 * find the borders of the sudoku grid; the check for white line begins 1/3 
 	 * away from the centre of the image
-	 * @param side
-	 * @param bmp
-	 * @return
+	 * @param side 1=left, 2=right, 3=top, 4=bottom
+	 * @param bmp source bitmap
+	 * @return the x or y coordinate of the border
 	 */
 	private static int findBorders(int side, Bitmap bmp) {
 		switch (side) {
@@ -304,9 +344,9 @@ public class ImgManipUtil {
 
 	/**
 	 * checks if horizontal line(width) is outside the sudoku grid
-	 * @param height -- y coordinate
-	 * @param bmp -- bitmap containing image
-	 * @return
+	 * @param height y coordinate
+	 * @param bmp source bitmap
+	 * @return true if line is outside of sudoku grid, false otherwise
 	 */
 	private static boolean isBorderWidth(int height, Bitmap bmp) {
 		for (int i = 2*bmp.getWidth()/5; i < 3*bmp.getWidth()/5; i++) {
@@ -320,9 +360,9 @@ public class ImgManipUtil {
 
 	/**
 	 * checks if vertical line(height) is outside the sudoku grid
-	 * @param width -- x coordinate
-	 * @param bmp -- bitmap containing image
-	 * @return
+	 * @param width x coordinate
+	 * @param bmp bitmap containing image
+	 * @return true if line is outside of sudoku grid, false otherwise
 	 */
 	private static boolean isBorderHeight(int width, Bitmap bmp) {
 		for (int i = 2*bmp.getHeight()/5; i < 3*bmp.getHeight()/5; i++) {
@@ -336,8 +376,8 @@ public class ImgManipUtil {
 
 	/**
 	 * debugging method that draws white line to mat
-	 * @param line
-	 * @param m
+	 * @param line contains x1, y1, x2, y2
+	 * @param m source mat
 	 */
 	public static void drawLine(double[] line, Mat m){
 		double x1 = line[0];

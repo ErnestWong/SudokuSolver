@@ -49,7 +49,7 @@ public class TessOCR{
         
         //datapath is in parent directory of tessdata
         tessAPI.init(DATA_PATH, "eng");
-        tessAPI.setVariable("tessedit_char_whitelist", "0123456789");
+        tessAPI.setVariable("tessedit_char_whitelist", "123456789");
         //tessAPI.setImage(mBitmap);
         
         //int width = mBitmap.getWidth() / 9;

@@ -238,15 +238,7 @@ public class BlobExtractv2 {
 		int height = yCoords.get(yCoords.size() - 1) - yCoords.get(0);
 		int x = xCoords.get(0);
 		int y = yCoords.get(0);
-		if (x - BUFFER >= 0)
-			x -= BUFFER;
-		if (y - BUFFER >= 0)
-			y -= BUFFER;
-		if (width + BUFFER + x < mBitmap.getWidth())
-			width += BUFFER;
-		if (height + BUFFER + y < mBitmap.getHeight())
-			height += BUFFER;
-
+		
 		// check if rect dimensions is greater than a tile's
 		if (width > tileWidth || height > tileHeight) {
 			return null;
