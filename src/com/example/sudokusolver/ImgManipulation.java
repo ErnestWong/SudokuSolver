@@ -47,11 +47,12 @@ public class ImgManipulation {
 	private Context mContext;
 	private final float CONST_RATIO = (float) 0.03;
 	private Bitmap mBitmap;
+	private Mat clean;
 
 	public final String TAG_SUBMAT_DIMENS = "Submat dimensions";
 	public final String TAG_WHITE_POINT = "White point coorinates";
 	public final String TAG_TILE_STATUS = "tile status";
-	public final String TAG_HOUGHLINES = "HoughLines info";
+	public final static String TAG_HOUGHLINES = "HoughLines info";
 	public final String TAG_ERROR_FIND_GRID = "findGridArea error";
 	public final String TAG_ERROR_FLOODFILL = "Floodfill setPixel error";
 
@@ -66,42 +67,42 @@ public class ImgManipulation {
 	 * performs all the required image processing to find sudoku grid numbers
 	 */
 	public void doStoreBitmap() {
-		Mat result = ImgManipUtil.extractSudokuGrid(mBitmap);
-		Imgproc.cvtColor(result, result, Imgproc.COLOR_BGR2GRAY);
-		Imgproc.adaptiveThreshold(result, result, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 11, 2);
-		FileSaver.storeImage(ImgManipUtil.matToBitmap(result), "threshold");
-		//ImgManipUtil.dilateMat(result, 3);
-        //Imgproc.threshold(result, result, 128, 255, Imgproc.THRESH_BINARY);
-		//erodeBitmap();
+		clean = ImgManipUtil.bitmapToMat(mBitmap);
+		Mat result = extractSudokuGrid(clean);
+		Imgproc.cvtColor(clean, clean, Imgproc.COLOR_BGR2GRAY);
+		Imgproc.adaptiveThreshold(clean, clean, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 11, 2);
+		FileSaver.storeImage(ImgManipUtil.matToBitmap(clean), "threshold");
+		ImgManipUtil.dilateMat(result, 3);
+        ImgManipUtil.openMat(clean, 1);
+		Imgproc.threshold(result, result, 128, 255, Imgproc.THRESH_BINARY);
         
         Bitmap bmp = ImgManipUtil.matToBitmap(result);
-        Mat tmp = ImgManipUtil.bitmapToMat(bmp);
 		FileSaver.storeImage(bmp, "full");
 
         BlobExtractv2 blobext = new BlobExtractv2(bmp);
         blobext.blobExtract();
         
         Queue<Rect> numRects = blobext.getTileRects();
-        bmp = blobext.getFixedBitmap();
+        //bmp = blobext.getFixedBitmap();
         //bmp = matToBitmap(tmp);
-        
+        bmp = ImgManipUtil.matToBitmap(clean);
         FileSaver.storeImage(bmp, "laterFater");
         
         int count = 0;
-        TessOCR ocr = new TessOCR(bmp, mContext);
-		ocr.initOCR();
+       // TessOCR ocr = new TessOCR(bmp, mContext);
+		//ocr.initOCR();
 
         while(!numRects.isEmpty()){
         	Rect r = numRects.remove();
-        	Bitmap b = cropSubBitmap(r, bmp);
+        	Bitmap b = ImgManipUtil.cropSubBitmap(r, bmp, 5);
 			//Mat m = bitmapToMat(b);
 			//Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(2, 2));
 			//Imgproc.morphologyEx(m, m, Imgproc.MORPH_CLOSE, kernel);
 			//Imgproc.Canny(m, m, 50, 200);
 			//b = matToBitmap(m);
 			FileSaver.storeImage(b, "num " + count );
-			String ans = ocr.doOCR(b);
-            Log.d(TAG_TILE_STATUS, count + ", _ nonempty " + ans); 
+			//String ans = ocr.doOCR(b);
+           // Log.d(TAG_TILE_STATUS, count + ", _ nonempty " + ans); 
             count++;
         }
         
@@ -143,36 +144,116 @@ public class ImgManipulation {
          */
 		//Log.d("count", c + "," + numRects.size());
         
-		ocr.endTessOCR();
+		//ocr.endTessOCR();
 	}
 
-	private Bitmap cropSubBitmap(Rect r, Bitmap bmp) {
-		if (r.left - 10 >= 0) {
-			r.left -= 10;
-		} else {
-			r.left = 0;
+	/**
+	 * performs OpenCV image manipulations to extract and undistort sudoku puzzle from image
+	 * @param bitmap source bitmap
+	 * @return Mat image of fixed puzzle
+	 */
+	public Mat extractSudokuGrid(Mat mat){
+		//convert source bitmap to mat; use canny operation
+		Mat edges = new Mat(mat.size(), mat.type());
+		Imgproc.Canny(mat, edges, 50, 200);
+
+		//trim external noise to localize the sudoku puzzle and stores in bmp then m2
+		int[] bounds = ImgManipUtil.findGridBounds(edges);
+		edges = subMat(edges, bounds);
+		clean = subMat(clean, bounds);
+		
+		List<Point> corners = findCorners(edges);
+		Point topLeft = corners.get(0);
+		Point topRight = corners.get(1);
+		Point bottomLeft = corners.get(2);
+		Point bottomRight = corners.get(3);
+		
+		edges = ImgManipUtil.fixPerspective(topLeft, topRight, bottomLeft, bottomRight, edges);
+		clean = ImgManipUtil.fixPerspective(topLeft, topRight, bottomLeft, bottomRight, clean);
+		FileSaver.storeImage(ImgManipUtil.matToBitmap(edges), "edges");
+		FileSaver.storeImage(ImgManipUtil.matToBitmap(clean), "clean");
+		return edges;
+	}
+	
+	private Mat subMat(Mat mat, int[] bounds){
+		int left = bounds[0];
+		int right = bounds[1];
+		int top = bounds[2];
+		int bot = bounds[3];
+		
+		return mat.submat(top, bot, left, right);
+	}
+	
+	private List<Point> findCorners(Mat mat){
+		Mat lines = new Mat();
+		List<double[]> horizontalLines = new ArrayList<double[]>();
+		List<double[]> verticalLines = new ArrayList<double[]>();
+
+		Imgproc.HoughLinesP(mat, lines, 1, Math.PI/180, 150);
+
+		for(int i = 0; i < lines.cols(); i++){
+			double[] line = lines.get(0, i);
+			double x1 = line[0];
+			double y1 = line[1];
+			double x2 = line[2];
+			double y2 = line[3];
+			if(Math.abs(y2 - y1) < Math.abs(x2 - x1)){
+				horizontalLines.add(line);
+			}
+			else if(Math.abs(x2 - x1) < Math.abs(y2 - y1)){
+				verticalLines.add(line);
+			}
+		}
+		String lineInfo = String.format("horizontal: %d, vertical: %d, total: %d", horizontalLines.size(), verticalLines.size(), lines.cols());
+		Log.d(TAG_HOUGHLINES, lineInfo);
+
+		//lines for four boundaries of sudoku grid; find edges of the sudoku grid 
+		double[] topLine = horizontalLines.get(0);
+		double[] bottomLine = horizontalLines.get(0);
+		double[] leftLine = verticalLines.get(0);
+		double[] rightLine = verticalLines.get(0);
+
+		double xMin = 1000;
+		double xMax = 0;
+		double yMin = 1000;
+		double yMax = 0;
+
+		for(int i = 0; i < horizontalLines.size(); i++){
+			if(horizontalLines.get(i)[1] < yMin || horizontalLines.get(i)[3] < yMin){
+				topLine = horizontalLines.get(i);
+				yMin = horizontalLines.get(i)[1];
+			}
+			else if(horizontalLines.get(i)[1] > yMax || horizontalLines.get(i)[3] > yMax){
+				bottomLine = horizontalLines.get(i);
+				yMax = horizontalLines.get(i)[1];
+			}
 		}
 
-		if (r.top - 10 >= 0) {
-			r.top -= 10;
-		} else {
-			r.top = 0;
-		}
-
-		if (r.right + 10 < bmp.getWidth()) {
-			r.right += 10;
-		} else {
-			r.right = bmp.getWidth() - 1;
-		}
-
-		if (r.bottom + 10 < bmp.getHeight()) {
-			r.bottom += 10;
-		} else {
-			r.bottom = bmp.getHeight() - 1;
+		for(int i = 0; i < verticalLines.size(); i++){
+			if(verticalLines.get(i)[0] < xMin || verticalLines.get(i)[2] < xMin){
+				leftLine = verticalLines.get(i);
+				xMin = verticalLines.get(i)[0];
+			}
+			else if(verticalLines.get(i)[0] > xMax || verticalLines.get(i)[2] > xMax){
+				rightLine = verticalLines.get(i);
+				xMax = verticalLines.get(i)[0];
+			}
 		}
 		
-		return Bitmap.createBitmap(bmp, r.left, r.top, r.right - r.left, r.bottom - r.top);
+		//obtain four corners of sudoku grid and apply perspective transform to undistort image
+		Point topLeft = ImgManipUtil.findCorner(topLine, leftLine);
+		Point topRight = ImgManipUtil.findCorner(topLine, rightLine);
+		Point bottomLeft = ImgManipUtil.findCorner(bottomLine, leftLine);
+		Point bottomRight = ImgManipUtil.findCorner(bottomLine, rightLine);
+		
+		List<Point> corners = new ArrayList<Point>(4);
+		corners.add(topLeft);
+		corners.add(topRight);
+		corners.add(bottomLeft);
+		corners.add(bottomRight);
+		
+		return corners;
 	}
-
+	
 	
 }

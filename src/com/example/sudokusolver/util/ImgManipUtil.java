@@ -15,6 +15,7 @@ import org.opencv.utils.Converters;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.util.Log;
 
 public class ImgManipUtil {
@@ -41,7 +42,7 @@ public class ImgManipUtil {
 	public static Mat bitmapToMat(Bitmap bmp) {
 		Mat mat = new Mat(bmp.getHeight(), bmp.getWidth(), CvType.CV_8UC1);
 		Utils.bitmapToMat(bmp, mat);
-
+		
 		String matInfo = String.format("cols: %d, rows: %d", mat.cols(),
 				mat.rows(), mat.channels());
 		Log.d(TAG_MAT_DIMENS, matInfo);
@@ -106,10 +107,6 @@ public class ImgManipUtil {
 			else if(Math.abs(x2 - x1) < Math.abs(y2 - y1)){
 				verticalLines.add(line);
 			}
-			//Point start = new Point(x1, y1);
-			//Point end = new Point(x2, y2);
-			//Log.d("line points", x1 + "," + y1 + " " + x2 + "," + y2);
-			//Core.line(m2, start, end, new Scalar(255, 255, 255), 3);
 		}
 		String lineInfo = String.format("horizontal: %d, vertical: %d, total: %d", horizontalLines.size(), verticalLines.size(), lines.cols());
 		Log.d(TAG_HOUGHLINES, lineInfo);
@@ -160,6 +157,34 @@ public class ImgManipUtil {
 		return clean;
 	}
 	
+	public static Bitmap cropSubBitmap(Rect r, Bitmap bmp, int CONST_CROP) {
+		if (r.left - CONST_CROP >= 0) {
+			r.left -= CONST_CROP;
+		} else {
+			r.left = 0;
+		}
+
+		if (r.top - CONST_CROP >= 0) {
+			r.top -= CONST_CROP;
+		} else {
+			r.top = 0;
+		}
+
+		if (r.right + CONST_CROP < bmp.getWidth()) {
+			r.right += CONST_CROP;
+		} else {
+			r.right = bmp.getWidth() - 1;
+		}
+
+		if (r.bottom + CONST_CROP < bmp.getHeight()) {
+			r.bottom += CONST_CROP;
+		} else {
+			r.bottom = bmp.getHeight() - 1;
+		}
+		
+		return Bitmap.createBitmap(bmp, r.left, r.top, r.right - r.left, r.bottom - r.top);
+	}
+	
 	/**
 	 * performs openCV erosion to source mat
 	 * @param mat source on which to perform erosion
@@ -173,6 +198,12 @@ public class ImgManipUtil {
 		// fixedBmp = matToBitmap(manip);
 	}
 
+	public static void openMat(Mat mat, int factor){
+		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, 
+				new Size(factor, factor));
+		Imgproc.morphologyEx(mat, mat, Imgproc.MORPH_OPEN, kernel);
+	}
+	
 	/**
 	 * performs openCV dilation to source mat
 	 * @param mat source on which to perform dilation 
@@ -266,7 +297,7 @@ public class ImgManipUtil {
 	 * @param l2 array containing x1, y1, x2, y2
 	 * @return Point of intersection between two lines
 	 */
-	private static Point findCorner(double[]l1, double[]l2){
+	public static Point findCorner(double[]l1, double[]l2){
 		double x1 = l1[0];
 		double y1 = l1[1];
 		double x2 = l1[2];
@@ -293,11 +324,11 @@ public class ImgManipUtil {
 		int[] bounds = new int[4];
 		//find the four general edges of the sudoku grid; 5 pixel buffer region 
 		//in case any part of the grid gets cut off
-		Bitmap bmp = matToBitmap(mat);
-		int left = findBorders(1, bmp) - 5;
-		int right = findBorders(2, bmp) + 5;
-		int top = findBorders(3, bmp) - 5;
-		int bot = findBorders(4, bmp) + 5;
+		//Bitmap bmp = matToBitmap(mat);
+		int left = findBorders(1, mat) - 5;
+		int right = findBorders(2, mat) + 5;
+		int top = findBorders(3, mat) - 5;
+		int bot = findBorders(4, mat) + 5;
 
 		bounds[0] = left;
 		bounds[1] = right;
@@ -330,30 +361,30 @@ public class ImgManipUtil {
 	 * @param bmp source bitmap
 	 * @return the x or y coordinate of the border
 	 */
-	private static int findBorders(int side, Bitmap bmp) {
+	private static int findBorders(int side, Mat mat) {
 		switch (side) {
 		// left
 		case 1:
-			for(int i = bmp.getWidth()/3; i > 0; i--){
-				if(isBorderHeight(i, bmp)) return i;
+			for(int i = mat.cols()/3; i > 0; i--){
+				if(isBorderHeight(i, mat)) return i;
 			}
 			break;
 		// right
 		case 2:
-			for(int i = 2*bmp.getWidth()/3; i < bmp.getWidth(); i++){
-				if(isBorderHeight(i, bmp)) return i;
+			for(int i = 2*mat.cols()/3; i < mat.cols(); i++){
+				if(isBorderHeight(i, mat)) return i;
 			}
 			break;
 		// top
 		case 3:
-			for(int i = bmp.getHeight()/3; i > 0; i--){
-				if(isBorderWidth(i,bmp)) return i;
+			for(int i = mat.rows()/3; i > 0; i--){
+				if(isBorderWidth(i,mat)) return i;
 			}
 			break;
 		// bottom
 		case 4:
-			for(int i = 2*bmp.getHeight()/3; i < bmp.getHeight(); i++){
-				if(isBorderWidth(i,bmp)) return i;
+			for(int i = 2*mat.rows()/3; i < mat.rows(); i++){
+				if(isBorderWidth(i,mat)) return i;
 			}
 			break;
 		}
@@ -365,14 +396,14 @@ public class ImgManipUtil {
 
 	/**
 	 * checks if horizontal line(width) is outside the sudoku grid
-	 * @param height y coordinate
+	 * @param height y  coordinate
 	 * @param bmp source bitmap
 	 * @return true if line is outside of sudoku grid, false otherwise
 	 */
-	private static boolean isBorderWidth(int height, Bitmap bmp) {
-		for (int i = 2*bmp.getWidth()/5; i < 3*bmp.getWidth()/5; i++) {
+	private static boolean isBorderWidth(int height, Mat mat) {
+		for (int i = 2*mat.cols()/5; i < 3*mat.cols()/5; i++) {
 			// if pixel is black
-			if(bmp.getPixel(i, height) == Color.WHITE){
+			if((int)mat.get(height, i)[0] == 255){
 				return false;
 			}
 		}
@@ -385,10 +416,10 @@ public class ImgManipUtil {
 	 * @param bmp bitmap containing image
 	 * @return true if line is outside of sudoku grid, false otherwise
 	 */
-	private static boolean isBorderHeight(int width, Bitmap bmp) {
-		for (int i = 2*bmp.getHeight()/5; i < 3*bmp.getHeight()/5; i++) {
+	private static boolean isBorderHeight(int width, Mat mat) {
+		for (int i = 2*mat.rows()/5; i < 3*mat.rows()/5; i++) {
 			//if pixel is black
-			if(bmp.getPixel(width, i) == Color.WHITE){
+			if((int)mat.get(i, width)[0] == 255){
 				return false;
 			}
 		}
