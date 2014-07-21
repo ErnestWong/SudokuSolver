@@ -73,36 +73,37 @@ public class ImgManipulation {
 		Imgproc.adaptiveThreshold(clean, clean, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 11, 2);
 		FileSaver.storeImage(ImgManipUtil.matToBitmap(clean), "threshold");
 		ImgManipUtil.dilateMat(result, 3);
-        ImgManipUtil.openMat(clean, 1);
+        //ImgManipUtil.openMat(clean, 1);
 		Imgproc.threshold(result, result, 128, 255, Imgproc.THRESH_BINARY);
         
-        Bitmap bmp = ImgManipUtil.matToBitmap(result);
-		FileSaver.storeImage(bmp, "full");
+        //Bitmap bmp = ImgManipUtil.matToBitmap(result);
+		//FileSaver.storeImage(bmp, "full");
 
-        BlobExtractv2 blobext = new BlobExtractv2(bmp);
+        BlobExtractv2 blobext = new BlobExtractv2(result);
         blobext.blobExtract();
         
         Queue<Rect> numRects = blobext.getTileRects();
         //bmp = blobext.getFixedBitmap();
         //bmp = matToBitmap(tmp);
-        bmp = ImgManipUtil.matToBitmap(clean);
+        Bitmap bmp = ImgManipUtil.matToBitmap(clean);
         FileSaver.storeImage(bmp, "laterFater");
         
         int count = 0;
-       // TessOCR ocr = new TessOCR(bmp, mContext);
-		//ocr.initOCR();
+        TessOCR ocr = new TessOCR(bmp, mContext);
+		ocr.initOCR();
 
         while(!numRects.isEmpty()){
         	Rect r = numRects.remove();
-        	Bitmap b = ImgManipUtil.cropSubBitmap(r, bmp, 5);
+        	Mat tmp = ImgManipUtil.cropSubMat(r, clean, 10);
+        	Bitmap b = ImgManipUtil.matToBitmap(tmp);
 			//Mat m = bitmapToMat(b);
 			//Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(2, 2));
 			//Imgproc.morphologyEx(m, m, Imgproc.MORPH_CLOSE, kernel);
 			//Imgproc.Canny(m, m, 50, 200);
 			//b = matToBitmap(m);
 			FileSaver.storeImage(b, "num " + count );
-			//String ans = ocr.doOCR(b);
-           // Log.d(TAG_TILE_STATUS, count + ", _ nonempty " + ans); 
+			String ans = ocr.doOCR(b);
+            Log.d(TAG_TILE_STATUS, count + ", _ nonempty " + ans); 
             count++;
         }
         
@@ -144,7 +145,7 @@ public class ImgManipulation {
          */
 		//Log.d("count", c + "," + numRects.size());
         
-		//ocr.endTessOCR();
+		ocr.endTessOCR();
 	}
 
 	/**

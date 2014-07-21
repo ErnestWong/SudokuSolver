@@ -8,7 +8,14 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.SortedSet;
 
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
 import org.opencv.core.Point;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
+
+import com.example.sudokusolver.util.FileSaver;
+import com.example.sudokusolver.util.ImgManipUtil;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -17,7 +24,7 @@ import android.util.Log;
 
 public class BlobExtractv2 {
 
-	private Bitmap mBitmap;
+	private Mat mat;
 	private Bitmap fixedBmp;
 	private int tileWidth;
 	private int tileHeight;
@@ -25,14 +32,11 @@ public class BlobExtractv2 {
 	private static int GAP;
 	private List<Rect> tileRects = new ArrayList<Rect>();
 
-	public BlobExtractv2(Bitmap bmp) {
-		mBitmap = bmp;
-		tileWidth = mBitmap.getWidth() / 9;
-		tileHeight = mBitmap.getHeight() / 9;
+	public BlobExtractv2(Mat mat) {
+		this.mat = mat;
+		tileWidth = mat.cols() / 9;
+		tileHeight = mat.rows() / 9;
 		GAP = tileHeight / 2;
-		fixedBmp = Bitmap.createBitmap(mBitmap.getWidth(), mBitmap.getHeight(),
-				mBitmap.getConfig());
-		fixedBmp.eraseColor(Color.BLACK);
 	}
 
 	/**
@@ -40,16 +44,23 @@ public class BlobExtractv2 {
 	 * this method before getTileRects()
 	 */
 	public void blobExtract() {
+		int[][] pixelInfo = new int[mat.rows()][mat.cols()];
+		for(int row = 0; row < mat.rows(); row++){
+			for(int col = 0; col < mat.cols(); col++){
+				pixelInfo[row][col] = (int)mat.get(row, col)[0];
+			}
+		}
+		
 		Log.d("extract", "extracting");
 		int count = 0;
 		int numcount = 0;
-		for (int y = 1; y < mBitmap.getHeight() - 1; y++) {
-			for (int x = 1; x < mBitmap.getWidth() - 1; x++) {
-				if (mBitmap.getPixel(x, y) == Color.BLACK) {
+		for (int y = 1; y < mat.rows() - 1; y++) {
+			for (int x = 1; x < mat.cols() - 1; x++) {
+				if (pixelInfo[y][x] == 0) {
 					continue;
 				}
 
-				Rect r = floodfill(new Point(x, y));
+				Rect r = floodfill(new Point(x, y), pixelInfo);
 				if (r != null) {
 					numcount++;
 					tileRects.add(r);
@@ -68,27 +79,28 @@ public class BlobExtractv2 {
 	 * @param start
 	 * @return
 	 */
-	private Rect floodfill(Point start) {
+	private Rect floodfill(Point start, int[][]pixelInfo) {
 		// keeps track of checked pixels
-		boolean[][] checked = new boolean[mBitmap.getWidth()][mBitmap.getHeight()];
+		boolean[][] checked = new boolean[pixelInfo.length][pixelInfo[0].length];
 		List<Integer> xCoords = new ArrayList<Integer>();
 		List<Integer> yCoords = new ArrayList<Integer>();
 		List<Point> pixels = new ArrayList<Point>();
 		// queue of points to store the pixels; add initial pixel
 		Queue<Point> q = new LinkedList<Point>();
 		q.add(start);
-
+		
 		// remove pixel and check adjacent pixels until queue is empty
 		while (!q.isEmpty()) {
 			Point p = q.remove();
 
-			if (!checked[(int) p.x][(int) p.y]) {
-				if (mBitmap.getPixel((int) p.x, (int) p.y) == Color.WHITE && !outOfBounds(p)) {
+			if (!checked[(int) p.y][(int) p.x]) {
+				if (pixelInfo[(int)p.y][(int)p.x] == 255 && !outOfBounds(p, pixelInfo)) {
 					xCoords.add((int) p.x);
 					yCoords.add((int) p.y);
 					pixels.add(p);
 
-					mBitmap.setPixel((int) p.x, (int) p.y, Color.BLACK);
+					pixelInfo[(int)p.y][(int)p.x] = 0;
+					
 					q.add(new Point(p.x - 1, p.y - 1));
 					q.add(new Point(p.x - 1, p.y));
 					q.add(new Point(p.x - 1, p.y + 1));
@@ -99,17 +111,29 @@ public class BlobExtractv2 {
 					q.add(new Point(p.x + 1, p.y + 1));
 				}
 			}
-			checked[(int) p.x][(int) p.y] = true;
+			checked[(int) p.y][(int) p.x] = true;
 		}
 
 		Rect r = isNumber(xCoords, yCoords);
 
 		if (r != null) {
-			setNumToBitmap(pixels);
+			//setNumToBitmap(pixels);
 		}
 		xCoords.clear();
 		yCoords.clear();
 		return r;
+	}
+	
+	private Mat arrayToMat(int[][]pixels){
+		Mat m = new Mat(new Size(pixels[0].length, pixels.length), CvType.CV_8UC4);
+		for(int i = 0; i < pixels.length; i++){
+			for(int j = 0; j < pixels[i].length; j++){
+				double[] data = new double[4];
+				data[0] = pixels[i][j];
+				m.put(pixels.length, pixels[0].length, data);
+			}
+		}
+		return m;
 	}
 	
 	/**
@@ -143,9 +167,9 @@ public class BlobExtractv2 {
 	 * @param point-- target pixel
 	 * @return
 	 */
-	private boolean outOfBounds(Point point) {
-		if (point.x >= mBitmap.getWidth() - 2
-				|| point.y >= mBitmap.getHeight() - 2 || point.x <= 0
+	private boolean outOfBounds(Point point, int[][]pixelInfo) {
+		if (point.x >= pixelInfo[0].length - 2
+				|| point.y >= pixelInfo.length - 2 || point.x <= 0
 				|| point.y <= 0) {
 			return true;
 		} else {

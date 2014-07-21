@@ -157,7 +157,7 @@ public class ImgManipUtil {
 		return clean;
 	}
 	
-	public static Bitmap cropSubBitmap(Rect r, Bitmap bmp, int CONST_CROP) {
+	public static Mat cropSubMat(Rect r, Mat mat, int CONST_CROP) {
 		if (r.left - CONST_CROP >= 0) {
 			r.left -= CONST_CROP;
 		} else {
@@ -170,19 +170,19 @@ public class ImgManipUtil {
 			r.top = 0;
 		}
 
-		if (r.right + CONST_CROP < bmp.getWidth()) {
+		if (r.right + CONST_CROP < mat.cols()) {
 			r.right += CONST_CROP;
 		} else {
-			r.right = bmp.getWidth() - 1;
+			r.right = mat.cols() - 1;
 		}
 
-		if (r.bottom + CONST_CROP < bmp.getHeight()) {
+		if (r.bottom + CONST_CROP < mat.rows()) {
 			r.bottom += CONST_CROP;
 		} else {
-			r.bottom = bmp.getHeight() - 1;
+			r.bottom = mat.rows() - 1;
 		}
 		
-		return Bitmap.createBitmap(bmp, r.left, r.top, r.right - r.left, r.bottom - r.top);
+		return mat.submat(r.top, r.bottom, r.left, r.right);
 	}
 	
 	/**
