@@ -95,7 +95,7 @@ public class ImgManipulation {
         while(!numRects.isEmpty()){
         	Rect r = numRects.remove();
         	Mat tmp = ImgManipUtil.cropSubMat(r, clean, 10);
-        	Bitmap b = ImgManipUtil.matToBitmap(tmp);
+        	Bitmap b = blobext.removeNoise(tmp);
 			//Mat m = bitmapToMat(b);
 			//Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(2, 2));
 			//Imgproc.morphologyEx(m, m, Imgproc.MORPH_CLOSE, kernel);
