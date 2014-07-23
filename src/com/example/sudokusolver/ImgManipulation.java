@@ -88,13 +88,20 @@ public class ImgManipulation {
         Bitmap bmp = ImgManipUtil.matToBitmap(clean);
         FileSaver.storeImage(bmp, "laterFater");
         
+        boolean[][]numtiles = findNumTiles(clean, new ArrayList(numRects));
+        for(int i = 0; i < numtiles.length; i++){
+        	for(int j = 0; j < numtiles[i].length; j++){
+        		Log.d("tile number", numtiles[i][j] + " " + i + "," + j);
+        	}
+        }
+        
         int count = 0;
         TessOCR ocr = new TessOCR(bmp, mContext);
 		ocr.initOCR();
 
         while(!numRects.isEmpty()){
         	Rect r = numRects.remove();
-        	Mat tmp = ImgManipUtil.cropSubMat(r, clean, 10);
+        	Mat tmp = ImgManipUtil.cropSubMat(r, clean, 5);
         	Bitmap b = blobext.removeNoise(tmp);
 			//Mat m = bitmapToMat(b);
 			//Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(2, 2));
@@ -106,6 +113,7 @@ public class ImgManipulation {
             Log.d(TAG_TILE_STATUS, count + ", _ nonempty " + ans); 
             count++;
         }
+        
         
         /*
 		//9x9 array to store each number
@@ -256,5 +264,63 @@ public class ImgManipulation {
 		return corners;
 	}
 	
+	private boolean[][] findNumTiles(Mat m, List<Rect> rects){
+		byte[][] arrayMat = addNumsToMat(m, rects);
+		boolean[][] numTileArray = new boolean[9][9];
+		
+		for(int i = 0; i < 9; i++){
+			for(int j = 0; j < 9; j++){
+				numTileArray[i][j] = containsNumberTile(arrayMat, j, i);
+				
+			}
+		}
+		return numTileArray;
+	}
+	
+	/**
+	 * determines if array holding mat contains a number 
+	 * @param matarray array containing pixel info for mat
+	 * @param ratio percentage of the tile that must be white
+	 * @param xBound from 0 to 8 the number of the tile
+	 * @param yBound from 0 to 8 the number of the tile
+	 * @return true if empty, false otherwise
+	 */
+	private boolean containsNumberTile(byte[][]matarray, int xBound, int yBound){
+		int area = matarray.length * matarray[0].length;
+		int totalWhite = 0;
+		int xStart = xBound * matarray[0].length/9;
+		int xEnd = xStart + matarray[0].length/9 - 5;
+		int yStart = yBound * matarray.length/9;
+		int yEnd = yStart + matarray.length/9 - 5;
+		
+		for(int y = yStart; y < yEnd; y++){
+			for(int x = xStart; x < xEnd; x++){
+				if(matarray[y][x] == 1){
+					totalWhite++;
+				}
+			}
+		}
+		if(totalWhite > 0 * area){
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	private byte[][] addNumsToMat(Mat m, List<Rect>nums){
+		byte[][] matArray = new byte[m.rows()][m.cols()];
+		
+		for(Rect r: nums){
+			int origX = r.centerX() - (r.width()/2);
+			int origY = r.centerY() - (r.height()/2);
+			for(int y = origY; y < origY+r.height(); y++){
+				for(int x = origX; x < origX+r.width(); x++){
+					//set to 1 (white)
+					matArray[y][x] = 1;
+				}
+			}
+		}
+		return matArray;
+	}
 	
 }
