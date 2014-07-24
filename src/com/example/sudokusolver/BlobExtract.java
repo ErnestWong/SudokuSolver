@@ -20,25 +20,24 @@ import com.example.sudokusolver.util.FileSaver;
 import com.example.sudokusolver.util.ImgManipUtil;
 
 public class BlobExtract {
-	
+
 	private static int GAP;
 	public BlobExtract(){
-		
+
 	}
-	
+
 	/**
-	 * 
+	 * finds the approximate regions of the numbers in the source image
 	 * @param m processed mat ready for finding bounds
-	 * @return
+	 * @return List of Rects that bounds each number in image
 	 */
 	public List<Rect> getBoundingRects(Mat m){
 		int tileHeight = m.rows()/9;
 		int tileWidth = m.cols()/9;
 		GAP = tileHeight/2;
-		
-		Mat image = new Mat(m.size(), m.type());
+
 		List<Rect> boundRects = new ArrayList<Rect>();
-		
+
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 		Imgproc.findContours(m, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
 		for(MatOfPoint mPoint : contours){
@@ -46,100 +45,81 @@ public class BlobExtract {
 			if(isNumber(rect.width, rect.height, tileWidth, tileHeight)){
 				boundRects.add(rect);
 				//drawcontours negative thickness
-				Imgproc.drawContours(image, mPoint, contourIdx, color);
-				Core.rectangle(image, new Point(rect.x,rect.y), new Point(rect.x+rect.width,rect.y+rect.height),new Scalar(255,255,255));
+				//Imgproc.drawContours(image, mPoint, contourIdx, color);
+				//Core.rectangle(image, new Point(rect.x,rect.y), new Point(rect.x+rect.width,rect.y+rect.height),new Scalar(255,255,255), Core.FILLED);
 			}
 		}
+        Mat image = drawRectsToMat(m, boundRects);
 		FileSaver.storeImage(ImgManipUtil.matToBitmap(image), "testBlobextract");
 		Log.d("rect count", boundRects.size() + "");
 		return boundRects;
 	}
-	
-	public void rectToCleanMat(Mat cleanMat, Mat dirtyMat){
-		List<Rect> bounds = getBoundingRects(dirtyMat);
+
+    /**
+    *draws the list of filled rects to mat 
+    *@param src Mat source image (just needed for sizing)
+    *@param rects List of Rects to draw 
+    *@return result Mat with filled rectangles drawn on it
+    **/
+    public Mat drawRectsToMat(Mat src, List<Rect>rects){
+        Mat result = new Mat(src.size(), src.type());
+        for(Rect rect : rects){
+            Core.rectangle(result, new Point(rect.x,rect.y), new Point(rect.x+rect.width,rect.y+rect.height),new Scalar(255,255,255), Core.FILLED);
+        }
+        return result;
+    }
+    
+    /**
+    * extracts digits from Mat image for OCR 
+    *@param cleanMat unprocessed binary Mat image; used to extract numbers for OCR 
+    *@param processedMat processed binary Mat image; used to identify bounding rectangles
+    *@return List of Mat containing clean images of individual numbers
+    **/
+	public List<Mat> findCleanNumbers(Mat cleanMat, Mat processedMat){
+        List<Mat> numberMats = new ArrayList<Mat>();
+        
+		List<Rect> bounds = getBoundingRects(processedMat);
 		bounds = sortRects(bounds);
 		int count = 0;
-		for(Rect bound : bounds){
-			bound = extendRect(bound, cleanMat, 5);
+		for(Rect rect : bounds){
+			rect = extendRect(rect, cleanMat, 5);
 			Mat numMat = cleanMat.submat(bound);
-			removeNoise(numMat);
+			numMat = removeNoise(numMat);
+            numberMats.add(numMat);
 			FileSaver.storeImage(ImgManipUtil.matToBitmap(numMat), count+"");
 			count++;
 		}
-	}
-	
-	private void removeNoise(Mat submat){
-		
-	}
-	
-	/**
-	 * uses selection sort on input rects and outputs sorted queue
-	 * 
-	 * @param rects-- input list of Rect
-	 * @return
-	 */
-	private List<Rect> sortRects(List<Rect> rects) {
-		List<Rect> tmp = cloneRect(rects);
-		List<Rect> sorted = new LinkedList<Rect>();
-
-		while (!tmp.isEmpty()) {
-			Rect min = tmp.get(0);
-			for (int i = 0; i < tmp.size(); i++) {
-				if (compareRect(min, tmp.get(i))) {
-					min = tmp.get(i);
-				}
-			}
-			tmp.remove(min);
-			sorted.add(min);
-		}
-		return sorted;
+        return numberMats;
 	}
 
-	/**
-	 * returns deep copy clone of list
-	 * @param original-- input list
-	 * @return
-	 */
-	private List<Rect> cloneRect(List<Rect> original) {
-		List<Rect> tmpRect = new ArrayList<Rect>(original.size());
-		for (int i = 0; i < original.size(); i++) {
-			tmpRect.add(original.get(i));
-		}
-		return tmpRect;
+    /**
+    * removes small noise from the subMat, keeping only the number
+    *@param submat source subMat containing number image
+    *@return Mat without noise
+    **/
+	private Mat removeNoise(Mat submat){
+        Mat result = new Mat(submat.size(), submat.type());
+        List<MatOfPoint>contours = new ArrayList<MatOfPoint>();
+        Imgproc.findContours(submat, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
+        
+        for(int i = 0; i < contours.size(); i++){
+            Rect r = Imgproc.boundingRect(contours.get(i));
+            if(isSubNumber(r.width, r.height, submat.cols(), submat.rows())){
+                Imgproc.drawContours(result, contours, i, new Scalar(255,255,255), Core.FILLED);
+            }
+        }
+        
+        return result;
 	}
 
-	/**
-	 * helper method for sortRects-- sorts top left to bottom right with a
-	 * buffer region to distinguish separate rows
-	 * 
-	 * @param r1
-	 * @param r2
-	 * @return true if r1 > r2, false if r1 < r2
-	 */
-	private boolean compareRect(Rect r1, Rect r2) {
-		double c1X = r1.x + (r1.width/2);    //r1 centreX 
-		double c1Y = r1.y + (r1.height/2);   //r1 centreY
-		double c2X = r2.x + (r2.width/2);    //r2 centreX
-		double c2Y = r2.y + (r2.height/2);   //r2 centreY
-		
-		// check to see if r1 and r2 are in different rows(y value)
-		if (c1Y > c2Y + GAP) {
-			return true;
-		} else if (c2Y > c1Y + GAP) {
-			return false;
-		}
-		// check column (x value) if same row
-		else {
-			if (c1X > c2X) {
-				return true;
-			} else {
-				return false;
-			}
-		}
-
-	}
-	
-	
+    /**
+    * checks whether blob in Mat image is a number
+    * @param width width of number
+    * @param height height of number
+    * @param tileWidth width of 1/9 of the mat (one cell approx)
+    * @param tileHeight height of 1/9 of mat (one cell approx)
+    * @return true if blob is a number, false otherwise
+    **/
 	private boolean isNumber(int width, int height, int tileWidth, int tileHeight){
 		if (width > 7*tileWidth/9 || height > 7*tileHeight/9) {
 			return false;
@@ -154,10 +134,18 @@ public class BlobExtract {
 		if (height < tileHeight / 3 || width < tileWidth / 6) {
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
+    /**
+    * checks whether blob in subMat is a number
+    * @param width width of number
+    * @param height height of number
+    * @param tileWidth width of the subMat
+    * @param tileHeight height of subMat
+    * @return true if blob is a number, false otherwise
+    **/
 	private boolean isSubNumber(int width, int height, int tileWidth, int tileHeight){
 		if (width > 8*tileWidth/9 || height > 8*tileHeight/9) {
 			return false;
@@ -172,10 +160,17 @@ public class BlobExtract {
 		if (height < tileHeight / 2 || width < tileWidth / 3) {
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
+    /**
+    * extends and returns Rect by a given constant; checks bounds of Mat first
+    *@param r source Rect
+    *@param mat Mat to which Rect is bound 
+    *@param CONST_CROP number of pixels Rect is being extended by
+    *@return modified Rect
+    **/
 	private Rect extendRect(Rect r, Mat mat, int CONST_CROP) {
 		int left = r.x;
 		int right = r.x + r.width;
@@ -204,7 +199,73 @@ public class BlobExtract {
 		} else {
 			bot = mat.rows() - 1;
 		}
-		
+
 		return new Rect(left, top, right-left, bot-top);
+	}
+    /**
+	 * uses selection sort on input rects and outputs sorted queue
+	 * 
+	 * @param rects-- input list of Rect
+	 * @return sorted List
+	 */
+	private List<Rect> sortRects(List<Rect> rects) {
+		List<Rect> tmp = cloneRect(rects);
+		List<Rect> sorted = new LinkedList<Rect>();
+
+		while (!tmp.isEmpty()) {
+			Rect min = tmp.get(0);
+			for (int i = 0; i < tmp.size(); i++) {
+				if (compareRect(min, tmp.get(i))) {
+					min = tmp.get(i);
+				}
+			}
+			tmp.remove(min);
+			sorted.add(min);
+		}
+		return sorted;
+	}
+
+	/**
+	 * returns deep copy clone of list
+	 * @param original-- input list
+	 * @return clone of list
+	 */
+	private List<Rect> cloneRect(List<Rect> original) {
+		List<Rect> tmpRect = new ArrayList<Rect>(original.size());
+		for (int i = 0; i < original.size(); i++) {
+			tmpRect.add(original.get(i));
+		}
+		return tmpRect;
+	}
+
+	/**
+	 * helper method for sortRects-- sorts top left to bottom right with a
+	 * buffer region to distinguish separate rows
+	 * 
+	 * @param r1 Rect 1
+	 * @param r2 Rect 2
+	 * @return true if r1 > r2, false if r1 < r2
+	 */
+	private boolean compareRect(Rect r1, Rect r2) {
+		double c1X = r1.x + (r1.width/2);    //r1 centreX 
+		double c1Y = r1.y + (r1.height/2);   //r1 centreY
+		double c2X = r2.x + (r2.width/2);    //r2 centreX
+		double c2Y = r2.y + (r2.height/2);   //r2 centreY
+
+		// check to see if r1 and r2 are in different rows(y value)
+		if (c1Y > c2Y + GAP) {
+			return true;
+		} else if (c2Y > c1Y + GAP) {
+			return false;
+		}
+		// check column (x value) if same row
+		else {
+			if (c1X > c2X) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
 	}
 }
