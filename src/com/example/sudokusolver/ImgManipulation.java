@@ -72,13 +72,18 @@ public class ImgManipulation {
 		Imgproc.cvtColor(clean, clean, Imgproc.COLOR_BGR2GRAY);
 		Imgproc.adaptiveThreshold(clean, clean, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 11, 2);
 		FileSaver.storeImage(ImgManipUtil.matToBitmap(clean), "threshold");
-		ImgManipUtil.dilateMat(result, 3);
+		ImgManipUtil.dilateMat(result, 4);
         //ImgManipUtil.openMat(clean, 1);
 		Imgproc.threshold(result, result, 128, 255, Imgproc.THRESH_BINARY);
+		FileSaver.storeImage(ImgManipUtil.matToBitmap(result), "resultb4 ");
+		BlobExtract bE = new BlobExtract();
+		//bE.getBoundingRects(result);
+		bE.rectToCleanMat(clean, result);
         
         //Bitmap bmp = ImgManipUtil.matToBitmap(result);
 		//FileSaver.storeImage(bmp, "full");
 
+		/*
         BlobExtractv2 blobext = new BlobExtractv2(result);
         blobext.blobExtract();
         
@@ -113,47 +118,9 @@ public class ImgManipulation {
             Log.d(TAG_TILE_STATUS, count + ", _ nonempty " + ans); 
             count++;
         }
-        
-        
-        /*
-		//9x9 array to store each number
-		Bitmap[][] nums = new Bitmap[9][9];
-		int width = bmp.getWidth() / 9;
-		int height = bmp.getHeight() / 9;
-		int c = 0;
-		for(int i = 0; i < 9; i++){
-			for(int j = 0; j < 9; j++){
-				int x = width * j;
-				int y = height * i;
-
-
-				nums[i][j] = Bitmap.createBitmap(bmp, x, y, width, height);
-				//FileSaver.storeImage(nums[i][j], i + "," + j);
-				if(ImgManipUtil.findEmptyTile(nums[i][j], CONST_RATIO)){
-					Log.d(TAG_TILE_STATUS, i + "," + j + ": empty");
-					FileSaver.storeImage(nums[i][j], i + "," + j + "EMPTY");
-				} else {
-					Log.d(TAG_TILE_STATUS, i + "," + j + ": nonempty");
-					FileSaver.storeImage(nums[i][j], i + "," + j + "NOTEMPTY");
-					c++;
-
-					//Rect r = numRects.remove();
-					//Bitmap b = Bitmap.createBitmap(bmp, r.left, r.top, r.right-r.left, r.bottom-r.top);
-					//Mat tmpB = bitmapToMat(b);
-					//Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(5, 5));
-					//Imgproc.dilate(tmpB, tmpB, kernel);
-					//b = matToBitmap(tmpB);
-					//FileSaver.storeImage(b, c+ "num " + i + "," + j);
-					//String ans = ocr.doOCR(b);
-		            //Log.d(TAG_TILE_STATUS + "nonempty",count + ": "+ i + "," + j + ", "+ ans); 
-
-				}
-			}
-		}
-         */
-		//Log.d("count", c + "," + numRects.size());
-        
+      
 		ocr.endTessOCR();
+		*/
 	}
 
 	/**
