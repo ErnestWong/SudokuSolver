@@ -16,6 +16,7 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
@@ -30,7 +31,6 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.os.Environment;
 import android.util.Log;
 
@@ -78,49 +78,32 @@ public class ImgManipulation {
 		FileSaver.storeImage(ImgManipUtil.matToBitmap(result), "resultb4 ");
 		BlobExtract bE = new BlobExtract();
 		//bE.getBoundingRects(result);
-		bE.rectToCleanMat(clean, result);
+		List<Rect> boundingRects = bE.getBoundingRects(result);
+		List<Mat> listmats = bE.findCleanNumbers(clean, boundingRects);
+		Mat rectMat = bE.drawRectsToMat(clean, boundingRects);
+		FileSaver.storeImage(ImgManipUtil.matToBitmap(rectMat), "blobext");
         
-        //Bitmap bmp = ImgManipUtil.matToBitmap(result);
-		//FileSaver.storeImage(bmp, "full");
 
-		/*
-        BlobExtractv2 blobext = new BlobExtractv2(result);
-        blobext.blobExtract();
-        
-        Queue<Rect> numRects = blobext.getTileRects();
-        //bmp = blobext.getFixedBitmap();
-        //bmp = matToBitmap(tmp);
-        Bitmap bmp = ImgManipUtil.matToBitmap(clean);
-        FileSaver.storeImage(bmp, "laterFater");
-        
-        boolean[][]numtiles = findNumTiles(clean, new ArrayList(numRects));
-        for(int i = 0; i < numtiles.length; i++){
-        	for(int j = 0; j < numtiles[i].length; j++){
-        		Log.d("tile number", numtiles[i][j] + " " + i + "," + j);
+        boolean[][]emptyorNot = findNumTiles(rectMat, boundingRects);
+        for(int i = 0; i < 9; i++){
+        	for(int j = 0; j < 9; j++){
+        		Log.d("empty or not", emptyorNot[i][j]+" " + i + "," + j);
         	}
         }
-        
         int count = 0;
-        TessOCR ocr = new TessOCR(bmp, mContext);
+        TessOCR ocr = new TessOCR(mContext);
 		ocr.initOCR();
 
-        while(!numRects.isEmpty()){
-        	Rect r = numRects.remove();
-        	Mat tmp = ImgManipUtil.cropSubMat(r, clean, 5);
-        	Bitmap b = blobext.removeNoise(tmp);
-			//Mat m = bitmapToMat(b);
-			//Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(2, 2));
-			//Imgproc.morphologyEx(m, m, Imgproc.MORPH_CLOSE, kernel);
-			//Imgproc.Canny(m, m, 50, 200);
-			//b = matToBitmap(m);
-			FileSaver.storeImage(b, "num " + count );
+        for(int i = 0; i < listmats.size(); i++){
+        	Bitmap b = ImgManipUtil.matToBitmap(listmats.get(i));
+			FileSaver.storeImage(b, "num " + i );
 			String ans = ocr.doOCR(b);
-            Log.d(TAG_TILE_STATUS, count + ", _ nonempty " + ans); 
+            Log.d(TAG_TILE_STATUS, i + ", _ nonempty " + ans); 
             count++;
         }
       
 		ocr.endTessOCR();
-		*/
+		
 	}
 
 	/**
@@ -234,16 +217,15 @@ public class ImgManipulation {
 	private boolean[][] findNumTiles(Mat m, List<Rect> rects){
 		byte[][] arrayMat = addNumsToMat(m, rects);
 		boolean[][] numTileArray = new boolean[9][9];
-		
+
 		for(int i = 0; i < 9; i++){
 			for(int j = 0; j < 9; j++){
 				numTileArray[i][j] = containsNumberTile(arrayMat, j, i);
-				
 			}
 		}
 		return numTileArray;
 	}
-	
+
 	/**
 	 * determines if array holding mat contains a number 
 	 * @param matarray array containing pixel info for mat
@@ -259,7 +241,7 @@ public class ImgManipulation {
 		int xEnd = xStart + matarray[0].length/9 - 5;
 		int yStart = yBound * matarray.length/9;
 		int yEnd = yStart + matarray.length/9 - 5;
-		
+
 		for(int y = yStart; y < yEnd; y++){
 			for(int x = xStart; x < xEnd; x++){
 				if(matarray[y][x] == 1){
@@ -273,15 +255,13 @@ public class ImgManipulation {
 			return false;
 		}
 	}
-	
+
 	private byte[][] addNumsToMat(Mat m, List<Rect>nums){
 		byte[][] matArray = new byte[m.rows()][m.cols()];
-		
+
 		for(Rect r: nums){
-			int origX = r.centerX() - (r.width()/2);
-			int origY = r.centerY() - (r.height()/2);
-			for(int y = origY; y < origY+r.height(); y++){
-				for(int x = origX; x < origX+r.width(); x++){
+			for(int y = r.y; y < r.y+r.height-1; y++){
+				for(int x = r.x; x < r.x+r.width-1; x++){
 					//set to 1 (white)
 					matArray[y][x] = 1;
 				}
@@ -289,5 +269,6 @@ public class ImgManipulation {
 		}
 		return matArray;
 	}
+	
 	
 }

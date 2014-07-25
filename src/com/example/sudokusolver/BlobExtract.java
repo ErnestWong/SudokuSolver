@@ -22,10 +22,32 @@ import com.example.sudokusolver.util.ImgManipUtil;
 public class BlobExtract {
 
 	private static int GAP;
+	public final static Scalar WHITE = new Scalar(255);
+	public final static Scalar BLACK = new Scalar(0);
 	public BlobExtract(){
 
 	}
-
+	
+    /**
+    * extracts digits from Mat image for OCR 
+    *@param cleanMat unprocessed binary Mat image; used to extract numbers for OCR 
+    *@param processedMat processed binary Mat image; used to identify bounding rectangles
+    *@return List of Mat containing clean images of individual numbers
+    **/
+	public List<Mat> findCleanNumbers(Mat cleanMat, List<Rect> bounds){
+        List<Mat> numberMats = new ArrayList<Mat>();
+		
+		bounds = sortRects(bounds);
+		for(Rect rect : bounds){
+			rect = resizeRect(rect, cleanMat, 2);
+			Mat numMat = cleanMat.submat(rect);
+			removeNoise(numMat);
+			numMat = resizeMat(numMat, 1);
+            numberMats.add(numMat);
+		}
+        return numberMats;
+	}
+	
 	/**
 	 * finds the approximate regions of the numbers in the source image
 	 * @param m processed mat ready for finding bounds
@@ -44,13 +66,10 @@ public class BlobExtract {
 			Rect rect = Imgproc.boundingRect(mPoint);
 			if(isNumber(rect.width, rect.height, tileWidth, tileHeight)){
 				boundRects.add(rect);
-				//drawcontours negative thickness
-				//Imgproc.drawContours(image, mPoint, contourIdx, color);
-				//Core.rectangle(image, new Point(rect.x,rect.y), new Point(rect.x+rect.width,rect.y+rect.height),new Scalar(255,255,255), Core.FILLED);
 			}
 		}
-        Mat image = drawRectsToMat(m, boundRects);
-		FileSaver.storeImage(ImgManipUtil.matToBitmap(image), "testBlobextract");
+        //Mat image = drawRectsToMat(m, boundRects);
+		//FileSaver.storeImage(ImgManipUtil.matToBitmap(image), "testBlobextract");
 		Log.d("rect count", boundRects.size() + "");
 		return boundRects;
 	}
@@ -64,52 +83,30 @@ public class BlobExtract {
     public Mat drawRectsToMat(Mat src, List<Rect>rects){
         Mat result = new Mat(src.size(), src.type());
         for(Rect rect : rects){
-            Core.rectangle(result, new Point(rect.x,rect.y), new Point(rect.x+rect.width,rect.y+rect.height),new Scalar(255,255,255), Core.FILLED);
+            Core.rectangle(result, new Point(rect.x,rect.y), new Point(rect.x+rect.width,rect.y+rect.height),WHITE, Core.FILLED);
         }
         return result;
     }
-    
-    /**
-    * extracts digits from Mat image for OCR 
-    *@param cleanMat unprocessed binary Mat image; used to extract numbers for OCR 
-    *@param processedMat processed binary Mat image; used to identify bounding rectangles
-    *@return List of Mat containing clean images of individual numbers
-    **/
-	public List<Mat> findCleanNumbers(Mat cleanMat, Mat processedMat){
-        List<Mat> numberMats = new ArrayList<Mat>();
-        
-		List<Rect> bounds = getBoundingRects(processedMat);
-		bounds = sortRects(bounds);
-		int count = 0;
-		for(Rect rect : bounds){
-			rect = extendRect(rect, cleanMat, 5);
-			Mat numMat = cleanMat.submat(bound);
-			numMat = removeNoise(numMat);
-            numberMats.add(numMat);
-			FileSaver.storeImage(ImgManipUtil.matToBitmap(numMat), count+"");
-			count++;
-		}
-        return numberMats;
-	}
 
     /**
     * removes small noise from the subMat, keeping only the number
     *@param submat source subMat containing number image
     *@return Mat without noise
     **/
-	private Mat removeNoise(Mat submat){
-        Mat result = new Mat(submat.size(), submat.type());
+	private void removeNoise(Mat submat){
         List<MatOfPoint>contours = new ArrayList<MatOfPoint>();
-        Imgproc.findContours(submat, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
+        Mat tmp = new Mat(submat.size(), submat.type());
+        submat.copyTo(tmp);
         
+        Imgproc.findContours(tmp, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
         for(int i = 0; i < contours.size(); i++){
             Rect r = Imgproc.boundingRect(contours.get(i));
-            if(isSubNumber(r.width, r.height, submat.cols(), submat.rows())){
-                Imgproc.drawContours(result, contours, i, new Scalar(255,255,255), Core.FILLED);
+            if(isNoise(r.width, r.height, submat.cols(), submat.rows())){
+                Imgproc.drawContours(submat, contours, i, BLACK, Core.FILLED);
             }
         }
-        
-        return result;
+        //FileSaver.storeImage(ImgManipUtil.matToBitmap(result), "d");
+        //return result;
 	}
 
     /**
@@ -139,29 +136,18 @@ public class BlobExtract {
 	}
 
     /**
-    * checks whether blob in subMat is a number
+    * checks whether blob in subMat is noise (if small enough)
     * @param width width of number
     * @param height height of number
     * @param tileWidth width of the subMat
     * @param tileHeight height of subMat
     * @return true if blob is a number, false otherwise
     **/
-	private boolean isSubNumber(int width, int height, int tileWidth, int tileHeight){
-		if (width > 8*tileWidth/9 || height > 8*tileHeight/9) {
-			return false;
+	private boolean isNoise(int width, int height, int tileWidth, int tileHeight){
+		if (width < tileWidth/10 || height < tileHeight/10) {
+			return true;
 		}
-
-		// check this because a number rect should be narrow
-		if (width > height) {
-			return false;
-		}
-
-		// arbitrary parameters to check if rect is too small to be number
-		if (height < tileHeight / 2 || width < tileWidth / 3) {
-			return false;
-		}
-
-		return true;
+		return false;
 	}
 
     /**
@@ -171,7 +157,7 @@ public class BlobExtract {
     *@param CONST_CROP number of pixels Rect is being extended by
     *@return modified Rect
     **/
-	private Rect extendRect(Rect r, Mat mat, int CONST_CROP) {
+	private Rect resizeRect(Rect r, Mat mat, int CONST_CROP) {
 		int left = r.x;
 		int right = r.x + r.width;
 		int top = r.y;
@@ -202,6 +188,21 @@ public class BlobExtract {
 
 		return new Rect(left, top, right-left, bot-top);
 	}
+	
+	public Mat resizeMat(Mat m, int resizeBy){
+		if(resizeBy >= m.rows() || resizeBy >= m.cols()){
+			return m;
+		}
+		
+		int x = resizeBy;
+		int y = resizeBy;
+		int width = m.cols() - resizeBy;
+		int height = m.rows() - resizeBy;
+		
+		Rect r = new Rect(x, y, width, height);
+		return m.submat(r);
+	}
+	
     /**
 	 * uses selection sort on input rects and outputs sorted queue
 	 * 

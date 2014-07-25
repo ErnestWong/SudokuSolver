@@ -32,8 +32,7 @@ public class TessOCR{
     /**
      * constructor to obtain context+bitmap and initializes DATA_PATH needed for class methods
      **/ 
-    public TessOCR(Bitmap bitmap, Context context){
-    	mBitmap = bitmap;
+    public TessOCR(Context context){
     	mContext = context;
     	DATA_PATH = Environment.getExternalStorageDirectory() + "/Android/data/" + mContext.getPackageName() + "/Files/";
     }
