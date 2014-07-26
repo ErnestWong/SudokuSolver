@@ -1,17 +1,18 @@
 package com.example.sudokusolver;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
 
 
-public class SudokuGenerator{
-static int[][] grid = new int[9][9];
+public class SudokuSolver{
+private static int[][] grid = new int[9][9];
     
     /**
     *checks if value at the cell is valid
     **/
-    static boolean isValid(int row, int col, int num){
-        if(!containsRow(grid[row], num) && !containsCol(col, num) && !containsSq(row, col, num)) 
+    private static boolean isValid(int row, int col, int num, int[][]grid){
+        if(!containsRow(grid[row], num) && !containsCol(col, num, grid) && !containsSq(row, col, num, grid)) 
             return true;
         else return false;
     }
@@ -19,7 +20,7 @@ static int[][] grid = new int[9][9];
     /**
     *returns true if there is a row conflict
     **/
-    static boolean containsRow(int[] row, int n){
+    private static boolean containsRow(int[] row, int n){
         for(int i = 0; i < row.length; i++){
             if(row[i] == n) return true;
         }
@@ -29,7 +30,7 @@ static int[][] grid = new int[9][9];
     /**
     *returns true if there is a column conflict
     **/
-    static boolean containsCol(int col, int n){
+    private static boolean containsCol(int col, int n, int[][]grid){
         for(int i = 0; i < 9; i++){
             if(grid[i][col] == n) return true;
         }
@@ -39,7 +40,7 @@ static int[][] grid = new int[9][9];
     /**
     *returns true if there is a box(square) conflict
     **/
-    static boolean containsSq(int row, int col, int n){   
+    private static boolean containsSq(int row, int col, int n, int[][]grid){   
         //rounds down to the nearest 3 
     	int rowinc = row - row % 3;
     	int colinc = col - col % 3;
@@ -54,7 +55,7 @@ static int[][] grid = new int[9][9];
     
 
     
-    static void display(){
+    public static void display(int[][] grid){
 	System.out.println("-------------------------");
         for(int i = 0; i < 9; i++){
             for(int j = 0; j < 9; j++){
@@ -72,7 +73,7 @@ static int[][] grid = new int[9][9];
     /**
     *returns first empty cell's row
     **/
-    static int findRow(){
+    private static int findRow(int[][]grid){
     	for(int i = 0; i < 9; i++){
     		for(int j = 0; j < 9; j++){
     			if(grid[i][j] == 0) return i;
@@ -84,7 +85,7 @@ static int[][] grid = new int[9][9];
     /**
     *returns first empty cell's column
     **/
-    static int findCol(){
+    private static int findCol(int[][]grid){
     	for(int i = 0; i < 9; i++){
     		for(int j = 0; j < 9; j++){
     			if(grid[i][j] == 0) return j;
@@ -96,7 +97,7 @@ static int[][] grid = new int[9][9];
     /**
     *populates list of valid numbers (1-9) and returns in random permutation
     **/ 
-    static List<Integer> populateList(){
+    private static List<Integer> populateList(){
         List<Integer> rand = new ArrayList<Integer>(9);
         for(int i = 1; i <= 9; i++){
             rand.add(i);
@@ -109,13 +110,13 @@ static int[][] grid = new int[9][9];
     /**
     *recursive method to fill in the sudoku grid
     **/
-    static boolean fill(int row, int col){
+    public static boolean fill(int row, int col, int[][] grid){
         
         if(row == 9) return true;
         
         //find next empty cell
-        row = findRow();
-        col = findCol();
+        row = findRow(grid);
+        col = findCol(grid);
         List<Integer>avail = populateList();
         
         while(avail.size() > 0){
@@ -124,7 +125,7 @@ static int[][] grid = new int[9][9];
             avail.remove(0);
         
             //if value is valid, then check next cell
-            if(isValid(row, col, n)){
+            if(isValid(row, col, n, grid)){
                 grid[row][col] = n;
             
                 int tmprow;
@@ -133,7 +134,7 @@ static int[][] grid = new int[9][9];
                 
                 //recursively check next cell; if return false then clear 
                 //cell and move back; terminates when all cells are full
-                if(fill(tmprow, (col + 1) % 9)) return true;
+                if(fill(tmprow, (col + 1) % 9, grid)) return true;
                 
                
             }
@@ -149,7 +150,7 @@ static int[][] grid = new int[9][9];
     /**
     *non-recursive implementation of fill method
     **/
-    static void fill2(){
+    public static void fill2(){
     	boolean done = false;
     	int row = 0;
     	int col = 0;
@@ -167,7 +168,7 @@ static int[][] grid = new int[9][9];
     		else n = 1;
     		boolean found = false;
     		while(n <= 9 && !found){
-    			if(isValid(row, col, n)){
+    			if(isValid(row, col, n, grid)){
     				grid[row][col] = n;
     				found = true;
     			}
@@ -186,9 +187,56 @@ static int[][] grid = new int[9][9];
     		if(row == 9) done = true;
     	}
     }
+    
+    public static int emptyCol(int[][]grid){
+    	for(int i = 0; i < 9; i++){
+    		for(int j = 0; j < 9; j++){
+    			if(grid[i][j] == 0){
+    				return j;
+    			}
+    		}
+    	}
+    	return -1;
+    }
+    
+    public static int emptyRow(int[][]grid){
+    	for(int i = 0; i < 9; i++){
+    		for(int j = 0; j < 9; j++){
+    			if(grid[i][j] == 0){
+    				return i;
+    			}
+    		}
+    	}
+    	return -1;
+    }
+    
     public static void main(String[] args){
-    	fill(0,0);
-        display();
+    	int[][] grid = {
+    					{0,0,3,1,0,0,7,0,0},
+    					{5,6,0,0,8,7,0,0,0},
+    					{8,0,0,5,0,0,0,6,0},
+    					{9,0,0,0,6,0,0,0,1},
+    					{0,0,4,0,0,0,3,0,0},
+    					{1,0,0,0,9,0,0,0,2},
+    					{0,8,0,0,0,3,0,0,5},
+    					{0,0,0,7,1,0,0,3,9},
+    					{0,0,9,0,0,2,1,0,0},
+    					};
+    	
+    	int[][] grid2 = {
+				{0,0,0,2,6,0,7,0,1},
+				{6,8,0,0,7,0,0,9,0},
+				{1,9,0,0,0,4,5,0,0},
+				{8,2,0,1,0,0,0,4,0},
+				{0,0,4,6,0,2,9,0,0},
+				{0,5,0,0,0,3,0,2,8},
+				{0,0,9,3,0,0,0,7,4},
+				{0,4,0,0,5,0,0,3,6},
+				{7,0,3,0,1,8,0,0,0},
+				};
+    	
+    	fill(0,0, grid2);
+        display(grid2);
        
     }
 }

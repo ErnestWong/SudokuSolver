@@ -34,8 +34,8 @@ public class BlobExtract {
     *@param processedMat processed binary Mat image; used to identify bounding rectangles
     *@return List of Mat containing clean images of individual numbers
     **/
-	public List<Mat> findCleanNumbers(Mat cleanMat, List<Rect> bounds){
-        List<Mat> numberMats = new ArrayList<Mat>();
+	public Queue<Mat> findCleanNumbers(Mat cleanMat, List<Rect> bounds){
+        Queue<Mat> numberMats = new LinkedList<Mat>();
 		
 		bounds = sortRects(bounds);
 		for(Rect rect : bounds){
@@ -189,7 +189,7 @@ public class BlobExtract {
 		return new Rect(left, top, right-left, bot-top);
 	}
 	
-	public Mat resizeMat(Mat m, int resizeBy){
+	private Mat resizeMat(Mat m, int resizeBy){
 		if(resizeBy >= m.rows() || resizeBy >= m.cols()){
 			return m;
 		}

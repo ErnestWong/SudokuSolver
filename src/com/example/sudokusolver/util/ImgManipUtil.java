@@ -185,6 +185,16 @@ public class ImgManipUtil {
 		return mat.submat(r.top, r.bottom, r.left, r.right);
 	}
 	
+	public static void adaptiveThreshold(Mat mat){
+		Imgproc.adaptiveThreshold(mat, mat, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 11, 2);
+
+	}
+	
+	public static void binaryThreshold(Mat mat){
+		Imgproc.threshold(mat, mat, 128, 255, Imgproc.THRESH_BINARY);
+
+	}
+	
 	/**
 	 * performs openCV erosion to source mat
 	 * @param mat source on which to perform erosion

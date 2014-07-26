@@ -48,6 +48,8 @@ public class ImgManipulation {
 	private final float CONST_RATIO = (float) 0.03;
 	private Bitmap mBitmap;
 	private Mat clean;
+	private BlobExtract mBlobExtract;
+	private TessOCR mOCR;
 
 	public final String TAG_SUBMAT_DIMENS = "Submat dimensions";
 	public final String TAG_WHITE_POINT = "White point coorinates";
@@ -59,6 +61,8 @@ public class ImgManipulation {
 	public ImgManipulation(Context context, Bitmap bitmap) {
 		mContext = context;
 		mBitmap = bitmap;
+		mBlobExtract = new BlobExtract();
+		mOCR = new TessOCR(context);
 	}
 
 
@@ -70,42 +74,80 @@ public class ImgManipulation {
 		clean = ImgManipUtil.bitmapToMat(mBitmap);
 		Mat result = extractSudokuGrid(clean);
 		Imgproc.cvtColor(clean, clean, Imgproc.COLOR_BGR2GRAY);
-		Imgproc.adaptiveThreshold(clean, clean, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY_INV, 11, 2);
+		ImgManipUtil.adaptiveThreshold(clean);
+		
 		FileSaver.storeImage(ImgManipUtil.matToBitmap(clean), "threshold");
 		ImgManipUtil.dilateMat(result, 4);
-        //ImgManipUtil.openMat(clean, 1);
-		Imgproc.threshold(result, result, 128, 255, Imgproc.THRESH_BINARY);
-		FileSaver.storeImage(ImgManipUtil.matToBitmap(result), "resultb4 ");
-		BlobExtract bE = new BlobExtract();
-		//bE.getBoundingRects(result);
-		List<Rect> boundingRects = bE.getBoundingRects(result);
-		List<Mat> listmats = bE.findCleanNumbers(clean, boundingRects);
-		Mat rectMat = bE.drawRectsToMat(clean, boundingRects);
+		ImgManipUtil.binaryThreshold(result);
+
+		List<Rect> boundingRects = mBlobExtract.getBoundingRects(result);
+		Queue<Mat> listmats = mBlobExtract.findCleanNumbers(clean, boundingRects);
+		Mat rectMat = mBlobExtract.drawRectsToMat(clean, boundingRects);
 		FileSaver.storeImage(ImgManipUtil.matToBitmap(rectMat), "blobext");
         
 
-        boolean[][]emptyorNot = findNumTiles(rectMat, boundingRects);
+        boolean[][]containNums = findNumTiles(rectMat, boundingRects);
         for(int i = 0; i < 9; i++){
         	for(int j = 0; j < 9; j++){
-        		Log.d("empty or not", emptyorNot[i][j]+" " + i + "," + j);
+        		Log.d("contains Number", containNums[i][j]+" " + i + "," + j);
         	}
         }
-        int count = 0;
-        TessOCR ocr = new TessOCR(mContext);
-		ocr.initOCR();
-
-        for(int i = 0; i < listmats.size(); i++){
-        	Bitmap b = ImgManipUtil.matToBitmap(listmats.get(i));
-			FileSaver.storeImage(b, "num " + i );
-			String ans = ocr.doOCR(b);
-            Log.d(TAG_TILE_STATUS, i + ", _ nonempty " + ans); 
-            count++;
-        }
-      
-		ocr.endTessOCR();
-		
+        
+        int[][]grid = storeNumsToGrid(containNums, listmats);
+        SudokuSolver.fill(SudokuSolver.emptyRow(grid), SudokuSolver.emptyCol(grid), grid);
+		for(int i = 0; i < 9; i++){
+			for(int j = 0; j < 9; j++){
+				Log.d("e", i + "," + j + ": " + grid[i][j] + "");
+			}
+		}
 	}
 
+	/**
+	 * uses OCR to find the number in tile and stores results in 2D array
+	 * @param tileContainNum grid array indicating which tiles contains numbers
+	 * @param nums queue of Mats containing each individual number
+	 * @return grid array representing sudoku puzzle (empty == 0)
+	 */
+	public int[][] storeNumsToGrid(boolean[][]tileContainNum, Queue<Mat> nums){
+		int count = 0;
+		int[][] grid = new int[9][9];
+		for(int i = 0; i < 9; i++){
+			for(int j = 0; j < 9; j++){
+				Log.d("nums queue count", nums.size() + "");
+				if(tileContainNum[i][j]){
+					grid[i][j] = getOCRNum(nums.remove(), count);
+					count++;
+				}
+			}
+		
+		}
+		if(!mOCR.isEnded()){
+			mOCR.endTessOCR();
+		}
+		return grid;
+	}
+	
+	/**
+	 * uses tessOCR to recognize the digit in the Mat
+	 * @param num Mat containing image of the digit
+	 * @param count used for debugging/logging purposes
+	 * @return recognized integer
+	 */
+	private int getOCRNum(Mat num, int count){
+		if(!mOCR.isInit()){
+			mOCR.initOCR();
+		}
+		Bitmap b = ImgManipUtil.matToBitmap(num);
+		FileSaver.storeImage(b, count + "");
+		int ans = Integer.parseInt(mOCR.doOCR(b));
+		if(ans > 9){
+			ans = trimNum(ans);
+		}
+		Log.d("num", count + ": " + ans);
+		return ans;
+	}
+	
+			
 	/**
 	 * performs OpenCV image manipulations to extract and undistort sudoku puzzle from image
 	 * @param bitmap source bitmap
@@ -134,6 +176,12 @@ public class ImgManipulation {
 		return edges;
 	}
 	
+	/**
+	 * returns smaller mat based on bounds
+	 * @param mat source mat
+	 * @param bounds array: [0]=left, [1]=right, [2]=top, [3]=bottom
+	 * @return smaller subMat according to bounds
+	 */
 	private Mat subMat(Mat mat, int[] bounds){
 		int left = bounds[0];
 		int right = bounds[1];
@@ -143,6 +191,12 @@ public class ImgManipulation {
 		return mat.submat(top, bot, left, right);
 	}
 	
+	/**
+	 * finds corners of the sudoku grid in the Mat image using openCV HoughLines
+	 * points of intersection
+	 * @param mat source image
+	 * @return List of Points representing coordinates of the four corners
+	 */
 	private List<Point> findCorners(Mat mat){
 		Mat lines = new Mat();
 		List<double[]> horizontalLines = new ArrayList<double[]>();
@@ -166,7 +220,7 @@ public class ImgManipulation {
 		String lineInfo = String.format("horizontal: %d, vertical: %d, total: %d", horizontalLines.size(), verticalLines.size(), lines.cols());
 		Log.d(TAG_HOUGHLINES, lineInfo);
 
-		//lines for four boundaries of sudoku grid; find edges of the sudoku grid 
+		//find the lines furthest from centre which will be the bounds for the grid
 		double[] topLine = horizontalLines.get(0);
 		double[] bottomLine = horizontalLines.get(0);
 		double[] leftLine = verticalLines.get(0);
@@ -199,7 +253,7 @@ public class ImgManipulation {
 			}
 		}
 		
-		//obtain four corners of sudoku grid and apply perspective transform to undistort image
+		//obtain four corners of sudoku grid 
 		Point topLeft = ImgManipUtil.findCorner(topLine, leftLine);
 		Point topRight = ImgManipUtil.findCorner(topLine, rightLine);
 		Point bottomLeft = ImgManipUtil.findCorner(bottomLine, leftLine);
@@ -214,8 +268,15 @@ public class ImgManipulation {
 		return corners;
 	}
 	
+	/**
+	 * finds which tile contains a number and which doesn't
+	 * @param m source mat image
+	 * @param rects List of Rects indicating where the numbers are located
+	 * @return grid array indicating which tiles are empty;
+	 * 		   true == contains number, false == empty
+	 */
 	private boolean[][] findNumTiles(Mat m, List<Rect> rects){
-		byte[][] arrayMat = addNumsToMat(m, rects);
+		byte[][] arrayMat = addRectsToMat(m, rects);
 		boolean[][] numTileArray = new boolean[9][9];
 
 		for(int i = 0; i < 9; i++){
@@ -256,7 +317,7 @@ public class ImgManipulation {
 		}
 	}
 
-	private byte[][] addNumsToMat(Mat m, List<Rect>nums){
+	private byte[][] addRectsToMat(Mat m, List<Rect>nums){
 		byte[][] matArray = new byte[m.rows()][m.cols()];
 
 		for(Rect r: nums){
@@ -270,5 +331,16 @@ public class ImgManipulation {
 		return matArray;
 	}
 	
+	/**
+	 * safety method that trims integer to single digit
+	 * @param n
+	 * @return
+	 */
+	private int trimNum(int n){
+		while(n > 9){
+			n = n / 10;
+		}
+		return n;
+	}
 	
 }

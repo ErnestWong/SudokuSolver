@@ -22,7 +22,9 @@ public class TessOCR{
     private Bitmap mBitmap;
     private Context mContext;
     private TessBaseAPI tessAPI;
-    
+    private boolean isInit = false;
+    private boolean isEnded = false;
+  
     public final String TRAINED_DATA_DIRECTORY = "tessdata/";
     public final String TRAINED_DATA_FILENAME = "eng.traineddata";
     private String DATA_PATH;
@@ -42,33 +44,22 @@ public class TessOCR{
      * (which is required by tess-two API) and accesses tess API
      **/ 
     public void initOCR(){
-        //int[][] grid = new int[9][9];
         tessAPI = new TessBaseAPI();
         copyTessFileToStorage();
         
         //datapath is in parent directory of tessdata
         tessAPI.init(DATA_PATH, "eng");
         tessAPI.setVariable("tessedit_char_whitelist", "123456789");
-        //tessAPI.setImage(mBitmap);
-        
-        //int width = mBitmap.getWidth() / 9;
-        //int height = mBitmap.getHeight() / 9;
-        
-        /*
-        for(int i = 0; i < 9; i++){
-            for(int j = 0; j < 9; j++){
-                int x = width * i;
-                int y = height * j;
-                tessAPI.setRectangle(x, y, width, height);
-                String result = tessAPI.getUTF8Text();
-        
-                Log.i("Sudoku " + i + "," + j ,result);
-            }
-        }
-        */
-        //String result = tessAPI.getUTF8Text();
-        //Log.d("Results sudoku OCR", result);
-        //tessAPI.end();
+        isInit = true;
+       
+    }
+    
+    public boolean isInit(){
+    	return isInit;
+    }
+    
+    public boolean isEnded(){
+    	return isEnded;
     }
     
     public String doOCR(Bitmap bmp){
@@ -79,6 +70,7 @@ public class TessOCR{
     
     public void endTessOCR(){
     	tessAPI.end();
+    	isEnded = true;
     }
     
     /**
