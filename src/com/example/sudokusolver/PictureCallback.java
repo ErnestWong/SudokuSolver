@@ -11,6 +11,11 @@ import android.graphics.Rect;
 import android.hardware.Camera;
 import android.util.Log;
 
+/**
+ * Implements callback method that handles image capture
+ * @author E Wong
+ *
+ */
 public class PictureCallback implements Camera.PictureCallback {
 
 	private RectangleView mRectView;
@@ -38,9 +43,7 @@ public class PictureCallback implements Camera.PictureCallback {
 				imgManip.doStoreBitmap();
 				mRectView.setPaintColor(Color.GREEN);
 				mShCB.startPreview();
-				//Log.d("fullfmp dimens", fullbmp.getWidth() + "," + fullbmp.getHeight());
-				//Log.d("rect dimens", r.top + "," + r.bottom + "," + r.left + "," + r.right);
-				//Log.d("bmp dimens", bmp.getWidth() + "," + bmp.getHeight());
+				
 			}
 			catch(Exception e){
 				mRectView.setPaintColor(Color.RED);
