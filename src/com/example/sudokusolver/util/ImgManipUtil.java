@@ -20,7 +20,7 @@ import android.util.Log;
 
 public class ImgManipUtil {
 
-	public static final int THRESHOLD = 50;
+	public static final int NOTSQUARE = 25;
 	
 	public static final String TAG_MAT_DIMENS = "Mat dimensions";
 	public static final String TAG_BMP_DIMENS = "Bitmap dimensions";
@@ -65,96 +65,6 @@ public class ImgManipUtil {
 		Log.d(TAG_BMP_DIMENS, bmpInfo);
 
 		return bmp;
-	}
-
-	/**
-	 * performs OpenCV image manipulations to extract and undistort sudoku puzzle from image
-	 * @param bitmap source bitmap
-	 * @return Mat image of fixed puzzle
-	 */
-	public static Mat extractSudokuGrid(Bitmap bitmap){
-		//convert source bitmap to mat; use canny operation
-		Mat clean = bitmapToMat(bitmap);
-		Mat edges = new Mat(clean.size(), clean.type());
-		Imgproc.Canny(clean, edges, 50, 200);
-
-		//trim external noise to localize the sudoku puzzle and stores in bmp then m2
-		int[] bounds = findGridBounds(edges);
-		int left = bounds[0];
-		int right = bounds[1];
-		int top = bounds[2];
-		int bot = bounds[3];
-		
-		edges = edges.submat(top, bot, left, right);
-		clean = clean.submat(top, bot, left, right);
-		
-		//uses houghlines to find lines in the image; sort them by horizontal/vertical
-		Mat lines = new Mat();
-		List<double[]> horizontalLines = new ArrayList<double[]>();
-		List<double[]> verticalLines = new ArrayList<double[]>();
-
-		Imgproc.HoughLinesP(edges, lines, 1, Math.PI/180, 150);
-
-		for(int i = 0; i < lines.cols(); i++){
-			double[] line = lines.get(0, i);
-			double x1 = line[0];
-			double y1 = line[1];
-			double x2 = line[2];
-			double y2 = line[3];
-			if(Math.abs(y2 - y1) < Math.abs(x2 - x1)){
-				horizontalLines.add(line);
-			}
-			else if(Math.abs(x2 - x1) < Math.abs(y2 - y1)){
-				verticalLines.add(line);
-			}
-		}
-		String lineInfo = String.format("horizontal: %d, vertical: %d, total: %d", horizontalLines.size(), verticalLines.size(), lines.cols());
-		Log.d(TAG_HOUGHLINES, lineInfo);
-
-		//lines for four boundaries of sudoku grid; find edges of the sudoku grid 
-		double[] topLine = horizontalLines.get(0);
-		double[] bottomLine = horizontalLines.get(0);
-		double[] leftLine = verticalLines.get(0);
-		double[] rightLine = verticalLines.get(0);
-
-		double xMin = 1000;
-		double xMax = 0;
-		double yMin = 1000;
-		double yMax = 0;
-
-		for(int i = 0; i < horizontalLines.size(); i++){
-			if(horizontalLines.get(i)[1] < yMin || horizontalLines.get(i)[3] < yMin){
-				topLine = horizontalLines.get(i);
-				yMin = horizontalLines.get(i)[1];
-			}
-			else if(horizontalLines.get(i)[1] > yMax || horizontalLines.get(i)[3] > yMax){
-				bottomLine = horizontalLines.get(i);
-				yMax = horizontalLines.get(i)[1];
-			}
-		}
-
-		for(int i = 0; i < verticalLines.size(); i++){
-			if(verticalLines.get(i)[0] < xMin || verticalLines.get(i)[2] < xMin){
-				leftLine = verticalLines.get(i);
-				xMin = verticalLines.get(i)[0];
-			}
-			else if(verticalLines.get(i)[0] > xMax || verticalLines.get(i)[2] > xMax){
-				rightLine = verticalLines.get(i);
-				xMax = verticalLines.get(i)[0];
-			}
-		}
-
-		//obtain four corners of sudoku grid and apply perspective transform to undistort image
-		Point topLeft = findCorner(topLine, leftLine);
-		Point bottomLeft = findCorner(bottomLine, leftLine);
-		Point topRight = findCorner(topLine, rightLine);
-		Point bottomRight = findCorner(bottomLine, rightLine);
-
-		edges = fixPerspective(topLeft, topRight, bottomLeft, bottomRight, edges);
-		clean = fixPerspective(topLeft, topRight, bottomLeft, bottomRight, clean);
-		FileSaver.storeImage(matToBitmap(edges), "edges");
-		FileSaver.storeImage(matToBitmap(clean), "clean");
-		return clean;
 	}
 	
 	public static Mat cropSubMat(Rect r, Mat mat, int CONST_CROP) {
@@ -451,5 +361,18 @@ public class ImgManipUtil {
 		Point end = new Point(x2, y2);
 		Log.d("boundaries", x1 + "," + y1 + " " + x2 + "," + y2);
 		Core.line(m, start, end, new Scalar(255, 255, 255), 3);
+	}
+	
+	public static boolean notSquare(int[]bounds){
+		int left = bounds[0];
+		int right = bounds[1];
+		int top = bounds[2];
+		int bot = bounds[3];
+		
+		if(Math.abs(right - left - (bot - top)) > NOTSQUARE){
+			Log.d(TAG_ERROR_FIND_GRID, "not square");
+			return true;
+		}
+		return false;
 	}
 }

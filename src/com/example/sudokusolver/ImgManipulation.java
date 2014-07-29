@@ -50,6 +50,7 @@ public class ImgManipulation {
 	private Mat clean;
 	private BlobExtract mBlobExtract;
 	private TessOCR mOCR;
+	private boolean error = false;
 
 	public final String TAG_SUBMAT_DIMENS = "Submat dimensions";
 	public final String TAG_WHITE_POINT = "White point coorinates";
@@ -65,14 +66,20 @@ public class ImgManipulation {
 		mOCR = new TessOCR(context);
 	}
 
-
+	public boolean getError(){
+		return error;
+	}
 
 	/**
 	 * performs all the required image processing to find sudoku grid numbers
 	 */
-	public void doStoreBitmap() {
+	public int[][] doStoreBitmap() {
 		clean = ImgManipUtil.bitmapToMat(mBitmap);
 		Mat result = extractSudokuGrid(clean);
+		if(error){
+			return null;
+		}
+		
 		Imgproc.cvtColor(clean, clean, Imgproc.COLOR_BGR2GRAY);
 		ImgManipUtil.adaptiveThreshold(clean);
 		
@@ -87,10 +94,18 @@ public class ImgManipulation {
         
 
         boolean[][]containNums = findNumTiles(rectMat, boundingRects);
+        int containCount = 0;
         for(int i = 0; i < 9; i++){
         	for(int j = 0; j < 9; j++){
-        		Log.d("contains Number", containNums[i][j]+" " + i + "," + j);
+        		if(containNums[i][j]){
+        			containCount++;
+        		}
         	}
+        }
+        Log.d("assert count", "containCount: " + containCount + ", listMats: " + listmats.size());
+        if(containCount != listmats.size()){
+        	error = true;
+        	return null;
         }
         
         int[][]grid = storeNumsToGrid(containNums, listmats);
@@ -100,6 +115,7 @@ public class ImgManipulation {
 				Log.d("e", i + "," + j + ": " + grid[i][j] + "");
 			}
 		}
+		return grid;
 	}
 
 	/**
@@ -126,6 +142,8 @@ public class ImgManipulation {
 		}
 		return grid;
 	}
+	
+
 	
 	/**
 	 * uses tessOCR to recognize the digit in the Mat
@@ -160,6 +178,8 @@ public class ImgManipulation {
 
 		//trim external noise to localize the sudoku puzzle and stores in bmp then m2
 		int[] bounds = ImgManipUtil.findGridBounds(edges);
+		error = ImgManipUtil.notSquare(bounds);
+		
 		edges = subMat(edges, bounds);
 		clean = subMat(clean, bounds);
 		

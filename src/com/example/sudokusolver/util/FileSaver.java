@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
 
@@ -19,6 +20,8 @@ public class FileSaver {
 	private FileSaver() {
 
 	}
+
+
 
 	/**
 	 * stores bitmap to internal storage
@@ -69,4 +72,29 @@ public class FileSaver {
 				+ mImageName);
 		return mediaFile;
 	}
+	
+	/*
+	private static class SaveImageAsync extends AsyncTask<String, Bitmap, Void>{
+		
+		private Bitmap bitmap;
+		private String fileString;
+		
+		public SaveImageAsync(Bitmap bitmap, String fileString){
+			this.bitmap = bitmap;
+			this.fileString = fileString;
+		}
+		
+		@Override
+		protected String onPreExecute(String...params){
+			
+		}
+
+		@Override
+		protected Void doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+	}
+	*/
 }
