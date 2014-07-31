@@ -1,8 +1,5 @@
 # cache for current jar dependency. DO NOT EDIT.
 # format is <lastModified> <length> <SHA-1> <path>
 # Encoding is UTF-8
-1389983490000 343731 6c77cd21db2ca4fe31aa1fd31417fe63be29e733 C:\Users\JW\Desktop\OpenCVAndroid\appcompat_v7\libs\android-support-v7-appcompat.jar
-1389983490000 343731 6c77cd21db2ca4fe31aa1fd31417fe63be29e733 C:\Users\JW\Desktop\OpenCVAndroid\appcompat_v7_2\libs\android-support-v7-appcompat.jar
-1389983490000 627582 cb6883d96005bc85b3e868f204507ea5b4fa9bbf C:\Users\JW\Desktop\OpenCVAndroid\appcompat_v7_2\libs\android-support-v4.jar
 1389983490000 627582 cb6883d96005bc85b3e868f204507ea5b4fa9bbf C:\Users\JW\Desktop\OpenCVAndroid\appcompat_v7\libs\android-support-v4.jar
 1403374879734 627582 cb6883d96005bc85b3e868f204507ea5b4fa9bbf C:\Users\JW\Documents\GitHub\SudokuSolver\libs\android-support-v4.jar

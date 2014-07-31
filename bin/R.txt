@@ -241,13 +241,12 @@ int id action_context_bar 0x7f050020
 int id action_menu_divider 0x7f050016
 int id action_menu_presenter 0x7f050017
 int id action_mode_close_button 0x7f050027
-int id action_settings 0x7f050045
+int id action_settings 0x7f050044
 int id activity_chooser_view_content 0x7f050028
 int id always 0x7f05000b
 int id any 0x7f05001a
 int id back 0x7f05001b
 int id beginning 0x7f050011
-int id bitmapimg 0x7f050043
 int id checkbox 0x7f050030
 int id collapseActionView 0x7f05000d
 int id default_activity_button 0x7f05002b
@@ -289,7 +288,7 @@ int id shortcut 0x7f050031
 int id showCustom 0x7f050007
 int id showHome 0x7f050004
 int id showTitle 0x7f050006
-int id splash_screen 0x7f050044
+int id splash_screen 0x7f050043
 int id split_action_bar 0x7f050021
 int id submit_area 0x7f05003c
 int id surfaceviewcamera 0x7f050040
@@ -326,8 +325,8 @@ int layout abc_search_dropdown_item_icons_2line 0x7f030015
 int layout abc_search_view 0x7f030016
 int layout activity_main 0x7f030017
 int layout fragment_main 0x7f030018
-int layout image_activity 0x7f030019
-int layout splash_activity 0x7f03001a
+int layout splash_activity 0x7f030019
+int layout sudoku_layout 0x7f03001a
 int layout support_simple_spinner_dropdown_item 0x7f03001b
 int menu main 0x7f0c0000
 int string abc_action_bar_home_description 0x7f0a0001

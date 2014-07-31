@@ -26,6 +26,10 @@
             android:name="com.example.sudokusolver.MainActivity"
             android:label="@string/app_name" >
         </activity>
+        <activity
+            android:name="com.example.sudokusolver.SudokuGridActivity"
+            android:label="@string/app_name" >
+        </activity>
     </application>
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />

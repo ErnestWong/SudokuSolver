@@ -44,7 +44,6 @@ import android.util.Log;
  */
 public class ImgManipulation {
 
-	private Context mContext;
 	private final float CONST_RATIO = (float) 0.03;
 	private Bitmap mBitmap;
 	private Mat clean;
@@ -60,7 +59,6 @@ public class ImgManipulation {
 	public final String TAG_ERROR_FLOODFILL = "Floodfill setPixel error";
 
 	public ImgManipulation(Context context, Bitmap bitmap) {
-		mContext = context;
 		mBitmap = bitmap;
 		mBlobExtract = new BlobExtract();
 		mOCR = new TessOCR(context);
@@ -73,7 +71,7 @@ public class ImgManipulation {
 	/**
 	 * performs all the required image processing to find sudoku grid numbers
 	 */
-	public int[][] doStoreBitmap() {
+	public int[][] getSudokuGridNums() {
 		clean = ImgManipUtil.bitmapToMat(mBitmap);
 		Mat result = extractSudokuGrid(clean);
 		if(error){
@@ -109,7 +107,6 @@ public class ImgManipulation {
         }
         
         int[][]grid = storeNumsToGrid(containNums, listmats);
-        SudokuSolver.fill(SudokuSolver.emptyRow(grid), SudokuSolver.emptyCol(grid), grid);
 		for(int i = 0; i < 9; i++){
 			for(int j = 0; j < 9; j++){
 				Log.d("e", i + "," + j + ": " + grid[i][j] + "");

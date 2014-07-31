@@ -19,7 +19,6 @@ import com.googlecode.tesseract.android.TessBaseAPI;
  */
 public class TessOCR{
  
-    private Context mContext;
     private TessBaseAPI tessAPI;
     private boolean isInit = false;
     private boolean isEnded = false;
@@ -34,8 +33,7 @@ public class TessOCR{
      * constructor to obtain context+bitmap and initializes DATA_PATH needed for class methods
      **/ 
     public TessOCR(Context context){
-    	mContext = context;
-    	DATA_PATH = Environment.getExternalStorageDirectory() + "/Android/data/" + mContext.getPackageName() + "/Files/";
+    	DATA_PATH = Environment.getExternalStorageDirectory() + "/Android/data/" + context.getPackageName() + "/Files/";
     }
     
     /**

@@ -107,10 +107,16 @@ private static int[][] grid = new int[9][9];
         return rand;
     }
     
+    public static int[][] solve(int[][]grid){
+    	int[][]copy = clone(grid);
+    	fill(SudokuSolver.emptyRow(copy), SudokuSolver.emptyCol(copy), copy);
+    	return copy;
+    }
+    
     /**
     *recursive method to fill in the sudoku grid
     **/
-    public static boolean fill(int row, int col, int[][] grid){
+    private static boolean fill(int row, int col, int[][] grid){
         
         if(row == 9) return true;
         
@@ -150,7 +156,7 @@ private static int[][] grid = new int[9][9];
     /**
     *non-recursive implementation of fill method
     **/
-    public static void fill2(){
+    private static void fill2(){
     	boolean done = false;
     	int row = 0;
     	int col = 0;
@@ -188,7 +194,7 @@ private static int[][] grid = new int[9][9];
     	}
     }
     
-    public static int emptyCol(int[][]grid){
+    private static int emptyCol(int[][]grid){
     	for(int i = 0; i < 9; i++){
     		for(int j = 0; j < 9; j++){
     			if(grid[i][j] == 0){
@@ -199,7 +205,7 @@ private static int[][] grid = new int[9][9];
     	return -1;
     }
     
-    public static int emptyRow(int[][]grid){
+    private static int emptyRow(int[][]grid){
     	for(int i = 0; i < 9; i++){
     		for(int j = 0; j < 9; j++){
     			if(grid[i][j] == 0){
@@ -235,8 +241,19 @@ private static int[][] grid = new int[9][9];
 				{7,0,3,0,1,8,0,0,0},
 				};
     	
-    	fill(0,0, grid2);
+    	//fill(0,0, grid2);
         display(grid2);
+        display(clone(grid2));
        
+    }
+    
+    private static int[][] clone(int[][]array){
+    	int[][] clone = new int[array.length][array[0].length];
+    	for(int i = 0; i < array.length; i++){
+    		for(int j = 0; j < array[0].length; j++){
+    			clone[i][j] = array[i][j];
+    		}
+    	}
+    	return clone;
     }
 }

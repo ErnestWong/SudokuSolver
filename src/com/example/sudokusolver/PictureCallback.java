@@ -3,12 +3,14 @@ package com.example.sudokusolver;
 import org.opencv.core.Mat;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.hardware.Camera;
+import android.os.Bundle;
 import android.util.Log;
 
 /**
@@ -32,24 +34,26 @@ public class PictureCallback implements Camera.PictureCallback {
 		Log.d("Taken Picture", "pic");
 		mShCB.stopPreview();
 		if (data != null) {
-			try{	
-				
+			try{					
 				Bitmap fullbmp = decodeByteAndScale(data, 5);
-				//BitmapRegionDecoder regionDecoder = BitmapRegionDecoder.newInstance(data, 0, data.length, true);
-				//Rect r = findROI(fullbmp);
- 				//Bitmap bmp = regionDecoder.decodeRegion(r, null);
  				
 				ImgManipulation imgManip = new ImgManipulation(mContext, fullbmp);
-				imgManip.doStoreBitmap();
-				mRectView.setPaintColor(Color.GREEN);
-				mShCB.startPreview();
+				int[][] unsolved = imgManip.getSudokuGridNums();
+				int[][]solved = SudokuSolver.solve(unsolved);
 				
+				if(imgManip.getError()){
+					mRectView.setPaintColor(Color.RED);
+				} else {
+					mRectView.setPaintColor(Color.GREEN);
+					startIntent(unsolved, solved);
+				}
 			}
 			catch(Exception e){
 				mRectView.setPaintColor(Color.RED);
-				mShCB.startPreview();
+				
 				Log.d("Error", e + "");
 			}
+			mShCB.startPreview();
 		}
 	
 	}
@@ -71,6 +75,17 @@ public class PictureCallback implements Camera.PictureCallback {
 		
 		Rect r = new Rect(top, left, bot, right);
 		return r;
+	}
+	
+	private void startIntent(int[][] unsolved, int[][]solved){
+		Bundle bundle = new Bundle();
+		bundle.putSerializable("unsolved", unsolved);
+		bundle.putSerializable("solved", solved);
+		
+		Intent intent = new Intent(mContext, SudokuGridActivity.class);
+		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		intent.putExtras(bundle);
+		mContext.startActivity(intent);
 	}
 
 }
