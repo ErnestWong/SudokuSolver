@@ -820,11 +820,13 @@ containing a value of this type.
         public static final int abc_split_action_bar_is_narrow=0x7f060002;
     }
     public static final class color {
-        public static final int abc_search_url_text_holo=0x7f070004;
+        public static final int abc_search_url_text_holo=0x7f070006;
         public static final int abc_search_url_text_normal=0x7f070000;
         public static final int abc_search_url_text_pressed=0x7f070002;
         public static final int abc_search_url_text_selected=0x7f070001;
+        public static final int black=0x7f070004;
         public static final int gray=0x7f070003;
+        public static final int grey=0x7f070005;
     }
     public static final class dimen {
         /**  Default height of an action bar. 
@@ -1022,7 +1024,7 @@ containing a value of this type.
         public static final int action_menu_divider=0x7f050016;
         public static final int action_menu_presenter=0x7f050017;
         public static final int action_mode_close_button=0x7f050027;
-        public static final int action_settings=0x7f050044;
+        public static final int action_settings=0x7f050045;
         public static final int activity_chooser_view_content=0x7f050028;
         public static final int always=0x7f05000b;
         public static final int any=0x7f05001a;
@@ -1072,6 +1074,7 @@ containing a value of this type.
         public static final int splash_screen=0x7f050043;
         public static final int split_action_bar=0x7f050021;
         public static final int submit_area=0x7f05003c;
+        public static final int sudoku_layout=0x7f050044;
         public static final int surfaceviewcamera=0x7f050040;
         public static final int tabMode=0x7f050002;
         public static final int takepicture=0x7f050041;

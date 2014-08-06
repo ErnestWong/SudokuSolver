@@ -118,11 +118,13 @@ int bool abc_config_actionMenuItemAllCaps 0x7f060005
 int bool abc_config_allowActionMenuItemTextWithIcon 0x7f060004
 int bool abc_config_showMenuShortcutsWhenKeyboardPresent 0x7f060003
 int bool abc_split_action_bar_is_narrow 0x7f060002
-int color abc_search_url_text_holo 0x7f070004
+int color abc_search_url_text_holo 0x7f070006
 int color abc_search_url_text_normal 0x7f070000
 int color abc_search_url_text_pressed 0x7f070002
 int color abc_search_url_text_selected 0x7f070001
+int color black 0x7f070004
 int color gray 0x7f070003
+int color grey 0x7f070005
 int dimen abc_action_bar_default_height 0x7f080002
 int dimen abc_action_bar_icon_vertical_padding 0x7f080003
 int dimen abc_action_bar_progress_bar_size 0x7f08000a
@@ -241,7 +243,7 @@ int id action_context_bar 0x7f050020
 int id action_menu_divider 0x7f050016
 int id action_menu_presenter 0x7f050017
 int id action_mode_close_button 0x7f050027
-int id action_settings 0x7f050044
+int id action_settings 0x7f050045
 int id activity_chooser_view_content 0x7f050028
 int id always 0x7f05000b
 int id any 0x7f05001a
@@ -291,6 +293,7 @@ int id showTitle 0x7f050006
 int id splash_screen 0x7f050043
 int id split_action_bar 0x7f050021
 int id submit_area 0x7f05003c
+int id sudoku_layout 0x7f050044
 int id surfaceviewcamera 0x7f050040
 int id tabMode 0x7f050002
 int id takepicture 0x7f050041
