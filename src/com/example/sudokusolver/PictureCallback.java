@@ -85,13 +85,25 @@ public class PictureCallback implements Camera.PictureCallback {
 
 	private void startIntent(int[][] unsolved, int[][] solved) {
 		Bundle bundle = new Bundle();
-		bundle.putSerializable("unsolved", unsolved);
-		bundle.putSerializable("solved", solved);
+		bundle.putIntArray("unsolved", toArray(unsolved));
+		bundle.putIntArray("solved", toArray(solved));
 
 		Intent intent = new Intent(mContext, SudokuGridActivity.class);
 		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.putExtras(bundle);
 		mContext.startActivity(intent);
+	}
+	
+	private int[] toArray(int[][]input){
+		int[] output = new int[input[0].length * input.length];
+		int index = 0;
+		for(int y = 0; y < input.length; y++){
+			for(int x = 0; x < input[0].length; x++){
+				output[index] = input[x][y];
+				index++;
+			}
+		}
+		return output;
 	}
 
 }

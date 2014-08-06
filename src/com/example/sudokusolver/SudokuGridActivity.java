@@ -20,11 +20,23 @@ public class SudokuGridActivity extends Activity{
 		Log.d("activyt", "in sudokugrid");
 		
 		Bundle b = this.getIntent().getExtras();
-		//unsolved = (int[][]) b.getSerializable("unsolved");
-		//solved = (int[][]) b.getSerializable("solved");
+		unsolved = to2DArray(b.getIntArray("unsolved"));
+		solved = to2DArray(b.getIntArray("solved"));
 		
-		mSudokuView = new SudokuView(this);
+		mSudokuView = new SudokuView(this, unsolved, solved);
 		linLay.addView(mSudokuView);
 		
+	}
+	
+	private int[][] to2DArray(int[] input){
+		int index = 0;
+		int[][] output = new int[9][9];
+		for(int i = 0; i < 9; i++){
+			for(int j = 0; j < 9; j++){
+				output[i][j] = input[index];
+				index++;
+			}
+		}
+		return output;
 	}
 }
