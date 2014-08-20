@@ -1,10 +1,10 @@
+package com.example.sudokusolver.ccl;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class UnionFind{
 
-    private int[] parent;
-    private int[] size;
-    
-    private List <Integer> parent;
-    private List<Integer> size;
     
     private Map<Integer, Integer> parent;
     private Map<Integer, Integer> size;
@@ -29,7 +29,7 @@ public class UnionFind{
         if(parent.get(n) == n){
             return n;
         } else {
-            parent.put(n, find(parent.get(n));
+            parent.put(n, find(parent.get(n)));
             return parent.get(n);
         }
     }

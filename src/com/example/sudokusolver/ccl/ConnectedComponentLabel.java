@@ -1,3 +1,10 @@
+package com.example.sudokusolver.ccl;
+
+import java.util.ArrayList;
+import java.util.List;
+import org.opencv.core.Mat;
+import android.graphics.Point;
+
 
 /**
 * Uses implementation of connected component labelling algorithm(blob extraction)
@@ -129,7 +136,7 @@ public class ConnectedComponentLabel{
     **/
     public void removeNoise(List<List<Point>> blobs, int[][] img){
         for(int i = 0; i < blobs.size(); i++){
-            if(!isNumber(blobs.get(i))){
+            if(!isNumber(blobs.get(i), img)){
                 for(Point p : blobs.get(i)){
                     img[p.y][p.x] = BLACK;
                 }
@@ -155,11 +162,13 @@ public class ConnectedComponentLabel{
     * according to the size of its bounding rectangle
     * @return true if isNumber, false otherwise
     **/
-    private boolean isNumber(List<Point>pixels) {
+    private boolean isNumber(List<Point>pixels, int[][]img) {
+    	int tileHeight = img.length / 9;
+    	int tileWidth = img[0].length / 9;
 
 		// if pixels are empty return null
 		if (pixels.size() == 0) {
-			false;
+			return false;
 		}
 		// sort list of pixels; first and last of each list will be the bounds
 		// of rect
