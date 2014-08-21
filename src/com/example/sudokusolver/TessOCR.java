@@ -65,11 +65,30 @@ public class TessOCR{
         return result;
     }
     
+    public String doOCR(byte[][] byteArray){
+    	Log.d("doing OCR", "byte array");
+    	byte[] stream = convertToByteStream(byteArray);
+    	tessAPI.setImage(stream, byteArray[0].length, byteArray.length, 1, 1);
+    	String result = tessAPI.getUTF8Text();
+    	return result;
+    }
+    
     public void endTessOCR(){
     	tessAPI.end();
     	isEnded = true;
     }
     
+    private byte[] convertToByteStream(byte[][]byteArray){
+    	int index = 0;
+    	byte[] stream = new byte[byteArray.length*byteArray[0].length];
+    	for(int i = 0; i < byteArray.length; i++){
+    		for(int j = 0; j < byteArray[0].length; j++){
+    			stream[index] = byteArray[i][j];
+    			index++;
+    		}
+    	}
+    	return stream;
+    }
 
     
 }

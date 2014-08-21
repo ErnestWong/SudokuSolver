@@ -2,8 +2,11 @@ package com.example.sudokusolver.ccl;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.opencv.core.Mat;
+
 import android.graphics.Point;
+import android.util.Log;
 
 
 /**
@@ -23,7 +26,7 @@ public class ConnectedComponentLabel{
     * @param mat input source image 
     * @return byte array containing only the numbers-- ready for OCR usage
     **/
-    public byte[] getByteArrayForOCR(Mat mat){
+    public byte[][] getByteArrayForOCR(Mat mat){
         int[][] image = blobExtract(mat);
         return intToByteArray(image);
     }
@@ -31,19 +34,19 @@ public class ConnectedComponentLabel{
     /**
     * converts 2D int array to byte array representation
     **/
-    public byte[] intToByteArray(int[][] img){
-        byte[] stream = new byte[img.length*img[0].length];
-        int index = 0;
+    public byte[][] intToByteArray(int[][] img){
+        byte[][] stream = new byte[img.length][img[0].length];
+        //int index = 0;
         for(int i = 0; i < img.length; i++){
             for(int j = 0; j < img[0].length; j++){
                 if(img[i][j] == 0){
                     //black
-                    stream[index] = 0;
+                    stream[i][j] = 0;
                 } else {
                     //white
-                    stream[index] = 127;
+                    stream[i][j] = 127;
                 }
-                index++;
+                //index++;
             }
         }
         return stream;
@@ -57,6 +60,7 @@ public class ConnectedComponentLabel{
     * (without noise)
     **/
     public int[][] blobExtract(Mat matImage){
+    	Log.d("Blob extracting", "starting");
         int[][] img = matToIntArray(matImage);
         UnionFind unionFind = new UnionFind();
         int currentLabel = 1;

@@ -22,6 +22,7 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
 
+import com.example.sudokusolver.ccl.ConnectedComponentLabel;
 import com.example.sudokusolver.util.FileSaver;
 import com.example.sudokusolver.util.ImgManipUtil;
 
@@ -80,6 +81,14 @@ public class ImgManipulation {
 		
 		Imgproc.cvtColor(clean, clean, Imgproc.COLOR_BGR2GRAY);
 		ImgManipUtil.adaptiveThreshold(clean);
+		
+		//start new
+		ConnectedComponentLabel ccl = new ConnectedComponentLabel();
+		byte[][] cleanByteArray = ccl.getByteArrayForOCR(clean);
+		mOCR.initOCR();
+		String ans = mOCR.doOCR(cleanByteArray);
+		Log.d("testting ans", ans);
+		//end new
 		
 		FileSaver.storeImage(ImgManipUtil.matToBitmap(clean), "threshold");
 		ImgManipUtil.dilateMat(result, 4);
