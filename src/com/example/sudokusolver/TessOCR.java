@@ -78,7 +78,7 @@ public class TessOCR{
     	isEnded = true;
     }
     
-    private byte[] convertToByteStream(byte[][]byteArray){
+    public static byte[] convertToByteStream(byte[][]byteArray){
     	int index = 0;
     	byte[] stream = new byte[byteArray.length*byteArray[0].length];
     	for(int i = 0; i < byteArray.length; i++){

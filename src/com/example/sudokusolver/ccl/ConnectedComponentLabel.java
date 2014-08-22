@@ -60,14 +60,14 @@ public class ConnectedComponentLabel{
     * (without noise)
     **/
     public int[][] blobExtract(Mat matImage){
-    	Log.d("Blob extracting", "starting");
+        Log.d("Blob extracting", "starting");
         int[][] img = matToIntArray(matImage);
         UnionFind unionFind = new UnionFind();
         int currentLabel = 1;
         
         //initialize labels to default zero
         int[][] label = new int[img.length][img[0].length];
-        
+        Log.d("blob extracting", "starting iteration");
         //iterate through each element 
         for(int y = 0; y < img.length; y++){
             for(int x = 0; x < img[0].length; x++){
@@ -101,7 +101,7 @@ public class ConnectedComponentLabel{
                 
             }
         }
-        
+        Log.d("Blob extracting","done first pass");
         //second pass; iterate through each element
         for(int y = 0; y < img.length; y++){
             for(int x = 0; x < img[0].length; x++){
@@ -113,17 +113,18 @@ public class ConnectedComponentLabel{
                 label[y][x] = unionFind.find(label[y][x]);
             }
         }
-       
+        Log.d("Blob extracting", "done second pass, current label: " + currentLabel);
         
-        List<List<Point>> regions = new ArrayList<List<Point>>(currentLabel-1);
+        List<List<Point>> regions = new ArrayList<List<Point>>();
         
         //initialize empty arrayList to each element in regions
-        for(int i = 0; i < regions.size(); i++){
+        for(int i = 0; i < currentLabel; i++){
             regions.add(new ArrayList<Point>());
         }
+        Log.d("Blob extracting", "done initializing regions");
         //store coordinate of pixel to corresponding label
-        for(int y = 0; y < img.length; y++){
-            for(int x = 0; x < img[0].length; x++){
+        for(int y = 0; y < label.length; y++){
+            for(int x = 0; x < label[0].length; x++){
                 regions.get(label[y][x]).add(new Point(x,y));
             }
         }
@@ -139,19 +140,25 @@ public class ConnectedComponentLabel{
     * @param img int array representation of image (the method edits this directly)
     **/
     public void removeNoise(List<List<Point>> blobs, int[][] img){
+    	int numberCount = 0;
         for(int i = 0; i < blobs.size(); i++){
             if(!isNumber(blobs.get(i), img)){
                 for(Point p : blobs.get(i)){
                     img[p.y][p.x] = BLACK;
                 }
+            } else {
+            	numberCount++;
             }
         }
+    	Log.d("blob extracting", "blobs size: " + blobs.size() + ", number count: " + numberCount );
+
     }
     
     /**
     * convert Mat representation of image to int
     **/
     private int[][] matToIntArray(Mat mat){
+        Log.d("blob extracting", "matToIntArray");
         int[][] image = new int[mat.rows()][mat.cols()];
         for(int i = 0; i < mat.rows(); i++){
             for(int j = 0; j < mat.cols(); j++){
@@ -167,56 +174,56 @@ public class ConnectedComponentLabel{
     * @return true if isNumber, false otherwise
     **/
     private boolean isNumber(List<Point>pixels, int[][]img) {
-    	int tileHeight = img.length / 9;
-    	int tileWidth = img[0].length / 9;
+        int tileHeight = img.length / 9;
+        int tileWidth = img[0].length / 9;
 
-		// if pixels are empty return null
-		if (pixels.size() == 0) {
-			return false;
-		}
-		// sort list of pixels; first and last of each list will be the bounds
-		// of rect
-		int xMax = (int)pixels.get(0).x;
-		int xMin = (int)pixels.get(0).x;
-		int yMax = (int)pixels.get(0).y;
-		int yMin = (int)pixels.get(0).y;
-		
-		for(int i = 0; i < pixels.size(); i++){
-			if((int)pixels.get(i).x > xMax){
-				xMax = (int)pixels.get(i).x;
-			}
-			if((int)pixels.get(i).x < xMin){
-				xMin = (int)pixels.get(i).x;
-			}
-			if((int)pixels.get(i).y > yMax){
-				yMax = (int)pixels.get(i).y;
-			}
-			if((int)pixels.get(i).y < yMin){
-				yMin = (int)pixels.get(i).y;
-			}
-		}
-		int width = xMax - xMin;
-		int height = yMax - yMin;
-		int x = xMin;
-		int y = yMin;
-		
-		// check if rect dimensions is greater than a tile's
-		if (width > tileWidth || height > tileHeight) {
-			return false;
-		}
+        // if pixels are empty return null
+        if (pixels.size() == 0) {
+            return false;
+        }
+        // sort list of pixels; first and last of each list will be the bounds
+        // of rect
+        int xMax = (int)pixels.get(0).x;
+        int xMin = (int)pixels.get(0).x;
+        int yMax = (int)pixels.get(0).y;
+        int yMin = (int)pixels.get(0).y;
+        
+        for(int i = 0; i < pixels.size(); i++){
+            if((int)pixels.get(i).x > xMax){
+                xMax = (int)pixels.get(i).x;
+            }
+            if((int)pixels.get(i).x < xMin){
+                xMin = (int)pixels.get(i).x;
+            }
+            if((int)pixels.get(i).y > yMax){
+                yMax = (int)pixels.get(i).y;
+            }
+            if((int)pixels.get(i).y < yMin){
+                yMin = (int)pixels.get(i).y;
+            }
+        }
+        int width = xMax - xMin;
+        int height = yMax - yMin;
+        int x = xMin;
+        int y = yMin;
+        
+        // check if rect dimensions is greater than a tile's
+        if (width > tileWidth || height > tileHeight) {
+            return false;
+        }
 
-		// check this because a number rect should be narrow
-		if (width > height) {
-			return false;
-		}
+        // check this because a number rect should be narrow
+        if (width > height) {
+            return false;
+        }
 
-		// arbitrary parameters to check if rect is too small to be number
-		if (height < tileHeight / 3 || width < tileWidth / 6) {
-			return false;
-		}
+        // arbitrary parameters to check if rect is too small to be number
+        if (height < tileHeight / 3 || width < tileWidth / 6) {
+            return false;
+        }
 
-		return true;
-	}
+        return true;
+    }
     
     /**
     * checks if pixel has neighboring pixels that are not background
@@ -226,6 +233,7 @@ public class ConnectedComponentLabel{
     public boolean hasNeighbors(int y, int x, int[][]label){
         for(int i = y-1; i <= y+1; i++){
             for(int j = x-1; j <= x+1; j++){
+                if(outOfBounds(j, i, label)) continue;
                 if(i == y && j == x) continue;
                 
                 if(label[i][j] != BLACK){
@@ -247,7 +255,7 @@ public class ConnectedComponentLabel{
             for(int j = x-1; j <= x+1; j++){
                 if(i == y && j == x) continue;
                 
-                if(!outOfBounds(i, j, label) && label[i][j] != BLACK){
+                if(!outOfBounds(j, i, label) && label[i][j] != BLACK){
                     neighbors[index] = label[i][j];
                     index++;
                 }

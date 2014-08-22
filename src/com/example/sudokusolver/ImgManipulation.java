@@ -30,6 +30,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.os.Environment;
@@ -85,6 +86,9 @@ public class ImgManipulation {
 		//start new
 		ConnectedComponentLabel ccl = new ConnectedComponentLabel();
 		byte[][] cleanByteArray = ccl.getByteArrayForOCR(clean);
+
+		FileSaver.storeImage(ImgManipUtil.matToBitmap(byteArrayToMat(cleanByteArray)), "byte");
+		
 		mOCR.initOCR();
 		String ans = mOCR.doOCR(cleanByteArray);
 		Log.d("testting ans", ans);
@@ -124,6 +128,17 @@ public class ImgManipulation {
 		return grid;
 	}
 
+	public Mat byteArrayToMat(byte[][]byteArray){
+		Mat m = new Mat(byteArray.length, byteArray[0].length, CvType.CV_8UC1);
+		for(int i = 0; i < byteArray.length; i++){
+			for(int j = 0; j < byteArray[0].length; j++){
+				byte[] data = {byteArray[i][j]};
+				m.put(i, j, data);
+			}
+		}
+		return m;
+	}
+	
 	/**
 	 * uses OCR to find the number in tile and stores results in 2D array
 	 * @param tileContainNum grid array indicating which tiles contains numbers
