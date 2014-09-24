@@ -22,15 +22,15 @@ import android.widget.ImageView;
 public class MainActivity extends Activity {
 	private Context mContext;
 	private Camera mCamera;
-	//private SurfaceView mSurfaceView;
+	// private SurfaceView mSurfaceView;
 	private SurfaceHolder mSurfaceHolder;
 	private Camera.Parameters mCameraParams;
 	private SurfaceHolderCallback mSurfaceCB;
 	private RectangleView mRectView;
 	public ImageView imgview;
-	//private Button mCaptureButton;
+	// private Button mCaptureButton;
 
-	//private CameraBridgeViewBase opencvCameraView;
+	// private CameraBridgeViewBase opencvCameraView;
 
 	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
 		@Override
@@ -60,7 +60,7 @@ public class MainActivity extends Activity {
 		imgview = (ImageView) findViewById(R.id.imgview);
 		mRectView = new RectangleView(this);
 		frameLayout.addView(mRectView);
-		
+
 		// get the holder providing access+control over the surfaceview
 		mSurfaceHolder = surfaceView.getHolder();
 
@@ -75,7 +75,7 @@ public class MainActivity extends Activity {
 			public void onClick(View v) {
 				Log.d("Button Clicked", "button");
 				mSurfaceCB.takePicture();
-				//mRectView.setPaintColor(Color.GREEN);
+				// mRectView.setPaintColor(Color.GREEN);
 
 			}
 		});
@@ -91,7 +91,8 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this,mLoaderCallback);
+		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this,
+				mLoaderCallback);
 		mSurfaceCB.startPreview();
 
 	}

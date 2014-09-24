@@ -43,12 +43,12 @@ public class BlobExtractv2 {
 	 */
 	public void blobExtract() {
 		int[][] pixelInfo = new int[mat.rows()][mat.cols()];
-		for(int row = 0; row < mat.rows(); row++){
-			for(int col = 0; col < mat.cols(); col++){
-				pixelInfo[row][col] = (int)mat.get(row, col)[0];
+		for (int row = 0; row < mat.rows(); row++) {
+			for (int col = 0; col < mat.cols(); col++) {
+				pixelInfo[row][col] = (int) mat.get(row, col)[0];
 			}
 		}
-		
+
 		Log.d("extract", "extracting");
 		int count = 0;
 		int numcount = 0;
@@ -71,15 +71,15 @@ public class BlobExtractv2 {
 		Log.d("number of blobs", count + "," + numcount);
 	}
 
-	public Bitmap removeNoise(Mat src){
-		Bitmap result = Bitmap.createBitmap(src.cols(), src.rows(), Bitmap.Config.ARGB_8888);
+	public Bitmap removeNoise(Mat src) {
+		Bitmap result = Bitmap.createBitmap(src.cols(), src.rows(),
+				Bitmap.Config.ARGB_8888);
 		int[][] pixelInfo = new int[src.rows()][src.cols()];
-		for(int row = 0; row < src.rows(); row++){
-			for(int col = 0; col < src.cols(); col++){
-				pixelInfo[row][col] = (int)src.get(row, col)[0];
+		for (int row = 0; row < src.rows(); row++) {
+			for (int col = 0; col < src.cols(); col++) {
+				pixelInfo[row][col] = (int) src.get(row, col)[0];
 			}
 		}
-		
 
 		for (int y = 1; y < src.rows() - 1; y++) {
 			for (int x = 1; x < src.cols() - 1; x++) {
@@ -93,36 +93,37 @@ public class BlobExtractv2 {
 		}
 		return result;
 	}
-	
+
 	/**
 	 * performs floodfill at start point and fills connected whitespace to black
 	 * 
 	 * @param start
 	 * @return
 	 */
-	private Rect floodfill(Point start, int[][]pixelInfo) {
-		if(pixelInfo[(int)start.y][(int)start.x] == 0){
+	private Rect floodfill(Point start, int[][] pixelInfo) {
+		if (pixelInfo[(int) start.y][(int) start.x] == 0) {
 			return null;
 		}
-		
+
 		// keeps track of checked pixels
 		boolean[][] checked = new boolean[pixelInfo.length][pixelInfo[0].length];
-		
+
 		List<Point> pixels = new ArrayList<Point>();
 		// queue of points to store the pixels; add initial pixel
 		Queue<Point> q = new LinkedList<Point>();
 		q.add(start);
-		
+
 		// remove pixel and check adjacent pixels until queue is empty
 		while (!q.isEmpty()) {
 			Point p = q.remove();
 
 			if (!checked[(int) p.y][(int) p.x]) {
-				if (pixelInfo[(int)p.y][(int)p.x] == 255 && !outOfBounds(p, pixelInfo)) {
+				if (pixelInfo[(int) p.y][(int) p.x] == 255
+						&& !outOfBounds(p, pixelInfo)) {
 					pixels.add(p);
 
-					pixelInfo[(int)p.y][(int)p.x] = 0;
-					
+					pixelInfo[(int) p.y][(int) p.x] = 0;
+
 					q.add(new Point(p.x - 1, p.y - 1));
 					q.add(new Point(p.x - 1, p.y));
 					q.add(new Point(p.x - 1, p.y + 1));
@@ -139,41 +140,42 @@ public class BlobExtractv2 {
 		Rect r = isNumber(pixels);
 
 		if (r != null) {
-			//setNumToBitmap(pixels);
+			// setNumToBitmap(pixels);
 		}
 		pixels.clear();
 		return r;
 	}
-	
+
 	/**
 	 * performs floodfill at start point and fills connected whitespace to black
 	 * 
 	 * @param start
 	 * @return
 	 */
-	private Rect floodfill(Point start, int[][]pixelInfo, Bitmap bmp) {
-		if(pixelInfo[(int)start.y][(int)start.x] == 0){
+	private Rect floodfill(Point start, int[][] pixelInfo, Bitmap bmp) {
+		if (pixelInfo[(int) start.y][(int) start.x] == 0) {
 			return null;
 		}
-		
+
 		// keeps track of checked pixels
 		boolean[][] checked = new boolean[pixelInfo.length][pixelInfo[0].length];
-		
+
 		List<Point> pixels = new ArrayList<Point>();
 		// queue of points to store the pixels; add initial pixel
 		Queue<Point> q = new LinkedList<Point>();
 		q.add(start);
-		
+
 		// remove pixel and check adjacent pixels until queue is empty
 		while (!q.isEmpty()) {
 			Point p = q.remove();
 
 			if (!checked[(int) p.y][(int) p.x]) {
-				if (pixelInfo[(int)p.y][(int)p.x] == 255 && !outOfBounds(p, pixelInfo)) {
+				if (pixelInfo[(int) p.y][(int) p.x] == 255
+						&& !outOfBounds(p, pixelInfo)) {
 					pixels.add(p);
 
-					pixelInfo[(int)p.y][(int)p.x] = 0;
-					
+					pixelInfo[(int) p.y][(int) p.x] = 0;
+
 					q.add(new Point(p.x - 1, p.y - 1));
 					q.add(new Point(p.x - 1, p.y));
 					q.add(new Point(p.x - 1, p.y + 1));
@@ -195,11 +197,12 @@ public class BlobExtractv2 {
 		pixels.clear();
 		return r;
 	}
-	
-	private Mat arrayToMat(int[][]pixels){
-		Mat m = new Mat(new Size(pixels[0].length, pixels.length), CvType.CV_8UC4);
-		for(int i = 0; i < pixels.length; i++){
-			for(int j = 0; j < pixels[i].length; j++){
+
+	private Mat arrayToMat(int[][] pixels) {
+		Mat m = new Mat(new Size(pixels[0].length, pixels.length),
+				CvType.CV_8UC4);
+		for (int i = 0; i < pixels.length; i++) {
+			for (int j = 0; j < pixels[i].length; j++) {
 				double[] data = new double[4];
 				data[0] = pixels[i][j];
 				m.put(pixels.length, pixels[0].length, data);
@@ -207,14 +210,16 @@ public class BlobExtractv2 {
 		}
 		return m;
 	}
-	
+
 	/**
 	 * set bitmap pixels of the fixedBmp to white
+	 * 
 	 * @param pixels
 	 */
-	private void setNumToBitmap(List<Point> pixels, Bitmap bmp){
-		for(int i = 0; i < pixels.size(); i++){
-			bmp.setPixel((int)pixels.get(i).x, (int)pixels.get(i).y, Color.WHITE);
+	private void setNumToBitmap(List<Point> pixels, Bitmap bmp) {
+		for (int i = 0; i < pixels.size(); i++) {
+			bmp.setPixel((int) pixels.get(i).x, (int) pixels.get(i).y,
+					Color.WHITE);
 		}
 	}
 
@@ -226,8 +231,8 @@ public class BlobExtractv2 {
 	}
 
 	/**
-	 * @return fixed bitmap removing noise and blobs that aren't numbers
-	 *  Must call blobExtract() first
+	 * @return fixed bitmap removing noise and blobs that aren't numbers Must
+	 *         call blobExtract() first
 	 **/
 	public Bitmap getFixedBitmap() {
 		return fixedBmp;
@@ -236,10 +241,11 @@ public class BlobExtractv2 {
 	/**
 	 * check if pixel is out of bounds from bitmap
 	 * 
-	 * @param point-- target pixel
+	 * @param point
+	 *            -- target pixel
 	 * @return
 	 */
-	private boolean outOfBounds(Point point, int[][]pixelInfo) {
+	private boolean outOfBounds(Point point, int[][] pixelInfo) {
 		if (point.x >= pixelInfo[0].length - 2
 				|| point.y >= pixelInfo.length - 2 || point.x <= 0
 				|| point.y <= 0) {
@@ -252,7 +258,8 @@ public class BlobExtractv2 {
 	/**
 	 * uses selection sort on input rects and outputs sorted queue
 	 * 
-	 * @param rects-- input list of Rect
+	 * @param rects
+	 *            -- input list of Rect
 	 * @return
 	 */
 	private Queue<Rect> sortRects(List<Rect> rects) {
@@ -274,7 +281,9 @@ public class BlobExtractv2 {
 
 	/**
 	 * returns deep copy clone of list
-	 * @param original-- input list
+	 * 
+	 * @param original
+	 *            -- input list
 	 * @return
 	 */
 	private List<Rect> cloneRect(List<Rect> original) {
@@ -316,11 +325,13 @@ public class BlobExtractv2 {
 	/**
 	 * checks if Rect encloses a number; uses series of tests to determine
 	 * 
-	 * @param xCoords-- list containing x coordinate pixels in rect
-	 * @param yCoords-- list containing y coordinate pixels in rect
+	 * @param xCoords
+	 *            -- list containing x coordinate pixels in rect
+	 * @param yCoords
+	 *            -- list containing y coordinate pixels in rect
 	 * @return null if not number, non-null otherwise
 	 */
-	private Rect isNumber(List<Point>pixels) {
+	private Rect isNumber(List<Point> pixels) {
 
 		// if pixels are empty return null
 		if (pixels.size() == 0) {
@@ -328,30 +339,30 @@ public class BlobExtractv2 {
 		}
 		// sort list of pixels; first and last of each list will be the bounds
 		// of rect
-		int xMax = (int)pixels.get(0).x;
-		int xMin = (int)pixels.get(0).x;
-		int yMax = (int)pixels.get(0).y;
-		int yMin = (int)pixels.get(0).y;
-		
-		for(int i = 0; i < pixels.size(); i++){
-			if((int)pixels.get(i).x > xMax){
-				xMax = (int)pixels.get(i).x;
+		int xMax = (int) pixels.get(0).x;
+		int xMin = (int) pixels.get(0).x;
+		int yMax = (int) pixels.get(0).y;
+		int yMin = (int) pixels.get(0).y;
+
+		for (int i = 0; i < pixels.size(); i++) {
+			if ((int) pixels.get(i).x > xMax) {
+				xMax = (int) pixels.get(i).x;
 			}
-			if((int)pixels.get(i).x < xMin){
-				xMin = (int)pixels.get(i).x;
+			if ((int) pixels.get(i).x < xMin) {
+				xMin = (int) pixels.get(i).x;
 			}
-			if((int)pixels.get(i).y > yMax){
-				yMax = (int)pixels.get(i).y;
+			if ((int) pixels.get(i).y > yMax) {
+				yMax = (int) pixels.get(i).y;
 			}
-			if((int)pixels.get(i).y < yMin){
-				yMin = (int)pixels.get(i).y;
+			if ((int) pixels.get(i).y < yMin) {
+				yMin = (int) pixels.get(i).y;
 			}
 		}
 		int width = xMax - xMin;
 		int height = yMax - yMin;
 		int x = xMin;
 		int y = yMin;
-		
+
 		// check if rect dimensions is greater than a tile's
 		if (width > tileWidth || height > tileHeight) {
 			return null;
@@ -369,15 +380,17 @@ public class BlobExtractv2 {
 
 		return new Rect(x, y, x + width, y + height);
 	}
-	
+
 	/**
 	 * checks if Rect encloses a number; uses series of tests to determine
 	 * 
-	 * @param xCoords-- list containing x coordinate pixels in rect
-	 * @param yCoords-- list containing y coordinate pixels in rect
+	 * @param xCoords
+	 *            -- list containing x coordinate pixels in rect
+	 * @param yCoords
+	 *            -- list containing y coordinate pixels in rect
 	 * @return null if not number, non-null otherwise
 	 */
-	private Rect isNumber(List<Point>pixels, int tilewidth, int tileheight) {
+	private Rect isNumber(List<Point> pixels, int tilewidth, int tileheight) {
 
 		// if pixels are empty return null
 		if (pixels.size() == 0) {
@@ -385,30 +398,30 @@ public class BlobExtractv2 {
 		}
 		// sort list of pixels; first and last of each list will be the bounds
 		// of rect
-		int xMax = (int)pixels.get(0).x;
-		int xMin = (int)pixels.get(0).x;
-		int yMax = (int)pixels.get(0).y;
-		int yMin = (int)pixels.get(0).y;
-		
-		for(int i = 0; i < pixels.size(); i++){
-			if((int)pixels.get(i).x > xMax){
-				xMax = (int)pixels.get(i).x;
+		int xMax = (int) pixels.get(0).x;
+		int xMin = (int) pixels.get(0).x;
+		int yMax = (int) pixels.get(0).y;
+		int yMin = (int) pixels.get(0).y;
+
+		for (int i = 0; i < pixels.size(); i++) {
+			if ((int) pixels.get(i).x > xMax) {
+				xMax = (int) pixels.get(i).x;
 			}
-			if((int)pixels.get(i).x < xMin){
-				xMin = (int)pixels.get(i).x;
+			if ((int) pixels.get(i).x < xMin) {
+				xMin = (int) pixels.get(i).x;
 			}
-			if((int)pixels.get(i).y > yMax){
-				yMax = (int)pixels.get(i).y;
+			if ((int) pixels.get(i).y > yMax) {
+				yMax = (int) pixels.get(i).y;
 			}
-			if((int)pixels.get(i).y < yMin){
-				yMin = (int)pixels.get(i).y;
+			if ((int) pixels.get(i).y < yMin) {
+				yMin = (int) pixels.get(i).y;
 			}
 		}
 		int width = xMax - xMin;
 		int height = yMax - yMin;
 		int x = xMin;
 		int y = yMin;
-		
+
 		// check if rect dimensions is greater than a tile's
 		if (width > tilewidth || height > tileheight) {
 			return null;
@@ -426,6 +439,5 @@ public class BlobExtractv2 {
 
 		return new Rect(x, y, x + width, y + height);
 	}
-	
-	
+
 }

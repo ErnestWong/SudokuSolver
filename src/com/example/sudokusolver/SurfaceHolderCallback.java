@@ -10,8 +10,9 @@ import android.view.SurfaceHolder;
 
 /**
  * class that manages changes made to surface
+ * 
  * @author E Wong
- *
+ * 
  */
 public class SurfaceHolderCallback implements SurfaceHolder.Callback {
 
@@ -19,18 +20,20 @@ public class SurfaceHolderCallback implements SurfaceHolder.Callback {
 	private Camera.Parameters mParams;
 	private boolean mPreviewRunning;
 	private PictureCallback mPictureCB;
-	String TAG = "preview"; 
-	
-	public SurfaceHolderCallback(Camera camera, RectangleView rectView, Context c){
+	String TAG = "preview";
+
+	public SurfaceHolderCallback(Camera camera, RectangleView rectView,
+			Context c) {
 		mCamera = camera;
 		mPictureCB = new PictureCallback(rectView, this, c);
 	}
+
 	// called immediately when surface is first created(initialize camera)
 	@Override
 	public void surfaceCreated(SurfaceHolder sh) {
-		
+
 		try {
-			mCamera = Camera.open();	
+			mCamera = Camera.open();
 			mCamera.setDisplayOrientation(90);
 			mCamera.setPreviewDisplay(sh);
 		} catch (IOException e) {
@@ -55,57 +58,58 @@ public class SurfaceHolderCallback implements SurfaceHolder.Callback {
 		mCamera.release();
 		mCamera = null;
 	}
-	
-	public void startPreview(){
-		
-		if(!mPreviewRunning && mCamera != null){
+
+	public void startPreview() {
+
+		if (!mPreviewRunning && mCamera != null) {
 			startAutoFocus();
 			mCamera.startPreview();
 			Log.i(TAG, "start preview");
 			mPreviewRunning = true;
 		}
 	}
-	
-	public void stopPreview(){
+
+	public void stopPreview() {
 		Log.i(TAG, "stop preview");
-		if(mPreviewRunning && mCamera != null){
+		if (mPreviewRunning && mCamera != null) {
 			mCamera.stopPreview();
 			stopAutoFocus();
 			mPreviewRunning = false;
 		}
 	}
-	
-	public void takePicture(){
+
+	public void takePicture() {
 		mCamera.takePicture(null, null, mPictureCB);
 	}
 
-	private void startAutoFocus(){
-		if(mParams == null){
+	private void startAutoFocus() {
+		if (mParams == null) {
 			mParams = mCamera.getParameters();
 			List<String> modes = mParams.getSupportedFocusModes();
-			if(modes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)){
+			if (modes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
 				mParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
 				Log.i("Focus mode", "Continuous picture mode: success");
-			}
-			else{
+			} else {
 				Log.i("Focus mode", "Continuous picture mode: fail");
 			}
 			mCamera.setParameters(mParams);
 		}
 		mCamera.autoFocus(autoFocusCB);
 	}
-	
-	private void stopAutoFocus(){
+
+	private void stopAutoFocus() {
 		mCamera.cancelAutoFocus();
 	}
-	
+
 	private Camera.AutoFocusCallback autoFocusCB = new Camera.AutoFocusCallback() {
-		
+
 		@Override
 		public void onAutoFocus(boolean success, Camera camera) {
-			if(success) Log.d("Autofocus", "autofocus success");
-			else Log.d("Autofocus", "autofocus fail");
-			
+			if (success)
+				Log.d("Autofocus", "autofocus success");
+			else
+				Log.d("Autofocus", "autofocus fail");
+
 		}
 	};
 }

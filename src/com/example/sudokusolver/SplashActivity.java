@@ -15,8 +15,9 @@ import android.util.Log;
 
 /**
  * displays splash screen as buffer to move OCR traineddata files
+ * 
  * @author E Wong
- *
+ * 
  */
 public class SplashActivity extends Activity {
 
@@ -33,8 +34,9 @@ public class SplashActivity extends Activity {
 
 	/**
 	 * async task required for app preparation (copying OCR files)
+	 * 
 	 * @author E Wong
-	 *
+	 * 
 	 */
 	private class OCRInitAsync extends AsyncTask<Void, Void, Void> {
 
@@ -52,18 +54,18 @@ public class SplashActivity extends Activity {
 			super.onPreExecute();
 		}
 
-		//copies tess OCR traineddata file from assets to external storage
+		// copies tess OCR traineddata file from assets to external storage
 		@Override
 		protected Void doInBackground(Void... arg) {
 			copyTessFileToStorage();
 			return null;
 		}
 
-		//method called after doInBackground
+		// method called after doInBackground
 		@Override
 		protected void onPostExecute(Void ready) {
 			super.onPostExecute(ready);
-			//start main activity
+			// start main activity
 			Intent i = new Intent(SplashActivity.this, MainActivity.class);
 			startActivity(i);
 

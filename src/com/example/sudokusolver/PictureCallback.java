@@ -43,7 +43,7 @@ public class PictureCallback implements Camera.PictureCallback {
 				ImgManipulation imgManip = new ImgManipulation(mContext,
 						fullbmp);
 				int[][] unsolved = imgManip.getSudokuGridNums();
-				
+
 				if (unsolved == null || imgManip.getError()) {
 					mRectView.setPaintColor(Color.RED);
 					Log.d("getSudokuGridNums Error", "returned null");
@@ -93,12 +93,12 @@ public class PictureCallback implements Camera.PictureCallback {
 		intent.putExtras(bundle);
 		mContext.startActivity(intent);
 	}
-	
-	private int[] toArray(int[][]input){
+
+	private int[] toArray(int[][] input) {
 		int[] output = new int[input[0].length * input.length];
 		int index = 0;
-		for(int y = 0; y < input.length; y++){
-			for(int x = 0; x < input[0].length; x++){
+		for (int y = 0; y < input.length; y++) {
+			for (int x = 0; x < input[0].length; x++) {
 				output[index] = input[x][y];
 				index++;
 			}

@@ -77,9 +77,10 @@ public class SudokuView extends View {
 		FontMetrics fm = mTextBold.getFontMetrics();
 		float offset = (fm.ascent + fm.descent) / 2;
 
-		for(int i = 0; i < 9; i++){
-			for(int j = 0; j < 9; j++){
-				Log.d("array: " + i + "," + j, mSolved[i][j] + "," + mUnsolved[i][j]);
+		for (int i = 0; i < 9; i++) {
+			for (int j = 0; j < 9; j++) {
+				Log.d("array: " + i + "," + j, mSolved[i][j] + ","
+						+ mUnsolved[i][j]);
 			}
 		}
 		drawDigits(canvas, offset);
@@ -87,24 +88,28 @@ public class SudokuView extends View {
 
 	/**
 	 * draws the digits to the sudoku grid
+	 * 
 	 * @param canvas
 	 * @param offset
 	 */
 	private void drawDigits(Canvas canvas, float offset) {
-		float tileWidth = width/9;
-		float tileHeight = height/9;
-		
+		float tileWidth = width / 9;
+		float tileHeight = height / 9;
+
 		for (int i = 0; i < mSolved.length; i++) {
 			for (int j = 0; j < mSolved[0].length; j++) {
-				float x = left + tileWidth * i  + tileWidth/2;
-				float y = top + tileHeight * j + tileHeight/2 - offset;
-				
+				float x = left + tileWidth * i + tileWidth / 2;
+				float y = top + tileHeight * j + tileHeight / 2 - offset;
+
 				// if it an original number, then draw with bold font
 				if (mUnsolved[i][j] != 0) {
-					canvas.drawText(Integer.toString(mSolved[i][j]), x, y, mTextBold);
-				//if it is part of solution, then draw with regular grey font
+					canvas.drawText(Integer.toString(mSolved[i][j]), x, y,
+							mTextBold);
+					// if it is part of solution, then draw with regular grey
+					// font
 				} else {
-					canvas.drawText(Integer.toString(mSolved[i][j]), x, y, mTextNormal);
+					canvas.drawText(Integer.toString(mSolved[i][j]), x, y,
+							mTextNormal);
 				}
 			}
 		}
