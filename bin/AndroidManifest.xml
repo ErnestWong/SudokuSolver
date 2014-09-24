@@ -14,7 +14,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.example.sudokusolver.SplashActivity"
+            android:name="com.example.sudokusolver.android.SplashActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -23,11 +23,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.example.sudokusolver.MainActivity"
+            android:name="com.example.sudokusolver.android.MainActivity"
             android:label="@string/app_name" >
         </activity>
         <activity
-            android:name="com.example.sudokusolver.SudokuGridActivity"
+            android:name="com.example.sudokusolver.android.SudokuGridActivity"
             android:label="@string/app_name" >
         </activity>
     </application>

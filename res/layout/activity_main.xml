@@ -35,6 +35,14 @@
             android:layout_marginLeft="25dp"
             android:layout_marginTop="14dp" />
 
+        <ToggleButton
+            android:id="@+id/toggle_flash"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/imgview"
+            android:layout_centerHorizontal="true"
+            android:text="Flash" />
+
     </RelativeLayout>
 
 </FrameLayout>
