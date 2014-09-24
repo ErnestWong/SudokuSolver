@@ -122,7 +122,7 @@ public class ImgManipulation {
         int[][]grid = storeNumsToGrid(containNums, listmats);
 		for(int i = 0; i < 9; i++){
 			for(int j = 0; j < 9; j++){
-				Log.d("e", i + "," + j + ": " + grid[i][j] + "");
+				Log.d("Grid", i + "," + j + ": " + grid[i][j] + "");
 			}
 		}
 		return grid;

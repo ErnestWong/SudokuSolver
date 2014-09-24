@@ -89,7 +89,5 @@ public class TessOCR{
     	}
     	return stream;
     }
-
-    
 }
 
