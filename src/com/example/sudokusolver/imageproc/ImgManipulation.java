@@ -88,16 +88,14 @@ public class ImgManipulation {
 		ConnectedComponentLabel ccl = new ConnectedComponentLabel();
 		byte[][] cleanByteArray = ccl.getByteArrayForOCR(clean);
 
-		FileSaver.storeImage(
-				ImgManipUtil.matToBitmap(byteArrayToMat(cleanByteArray)),
-				"byte");
+		//FileSaver.storeImage(ImgManipUtil.matToBitmap(byteArrayToMat(cleanByteArray)),"byte");
 
 		mOCR.initOCR();
 		String ans = mOCR.doOCR(cleanByteArray);
 		Log.d("testting ans", ans);
 		// end new
 
-		FileSaver.storeImage(ImgManipUtil.matToBitmap(clean), "threshold");
+		//FileSaver.storeImage(ImgManipUtil.matToBitmap(clean), "threshold");
 		ImgManipUtil.dilateMat(result, 4);
 		ImgManipUtil.binaryThreshold(result);
 
@@ -105,7 +103,7 @@ public class ImgManipulation {
 		Queue<Mat> listmats = mBlobExtract.findCleanNumbers(clean,
 				boundingRects);
 		Mat rectMat = mBlobExtract.drawRectsToMat(clean, boundingRects);
-		FileSaver.storeImage(ImgManipUtil.matToBitmap(rectMat), "blobext");
+		//FileSaver.storeImage(ImgManipUtil.matToBitmap(rectMat), "blobext");
 
 		boolean[][] containNums = findNumTiles(rectMat, boundingRects);
 		int containCount = 0;
@@ -185,7 +183,7 @@ public class ImgManipulation {
 			mOCR.initOCR();
 		}
 		Bitmap b = ImgManipUtil.matToBitmap(num);
-		FileSaver.storeImage(b, count + "");
+		//FileSaver.storeImage(b, count + "");
 		int ans = Integer.parseInt(mOCR.doOCR(b));
 		if (ans > 9) {
 			ans = trimNum(ans);
@@ -225,8 +223,8 @@ public class ImgManipulation {
 				bottomRight, edges);
 		clean = ImgManipUtil.fixPerspective(topLeft, topRight, bottomLeft,
 				bottomRight, clean);
-		FileSaver.storeImage(ImgManipUtil.matToBitmap(edges), "edges");
-		FileSaver.storeImage(ImgManipUtil.matToBitmap(clean), "clean");
+		//FileSaver.storeImage(ImgManipUtil.matToBitmap(edges), "edges");
+		//FileSaver.storeImage(ImgManipUtil.matToBitmap(clean), "clean");
 		return edges;
 	}
 
