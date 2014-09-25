@@ -51,7 +51,7 @@ public class PictureCallback implements Camera.PictureCallback {
 					mRectView.setPaintColor(Color.RED);
 					Log.d("getSudokuGridNums Error", "returned null");
 				} else {
-					int[][] solved = SudokuSolver.solve(unsolved);
+					int[][] solved = SudokuSolver.solveSudoku(unsolved);
 					mRectView.setPaintColor(Color.GREEN);
 					startIntent(unsolved, solved);
 				}

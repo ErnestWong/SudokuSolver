@@ -82,7 +82,7 @@ public class SurfaceHolderCallback implements SurfaceHolder.Callback {
 		mCamera.takePicture(null, null, mPictureCB);
 	}
 
-	private void startAutoFocus() {
+	public void startAutoFocus() {
 		if (mParams == null) {
 			mParams = mCamera.getParameters();
 			List<String> modes = mParams.getSupportedFocusModes();
@@ -97,7 +97,7 @@ public class SurfaceHolderCallback implements SurfaceHolder.Callback {
 		mCamera.autoFocus(autoFocusCB);
 	}
 
-	private void stopAutoFocus() {
+	public void stopAutoFocus() {
 		mCamera.cancelAutoFocus();
 	}
 

@@ -14,9 +14,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -62,7 +64,7 @@ public class MainActivity extends Activity {
 		imgview = (ImageView) findViewById(R.id.imgview);
 		mRectView = new RectangleView(this);
 		frameLayout.addView(mRectView);
-
+		
 		// get the holder providing access+control over the surfaceview
 		mSurfaceHolder = surfaceView.getHolder();
 
@@ -81,6 +83,16 @@ public class MainActivity extends Activity {
 
 			}
 		});
+		
+		//set on touch listener for autofocus
+		surfaceView.setOnTouchListener(new OnTouchListener(){
+			@Override
+			public boolean onTouch(View v, MotionEvent event) {
+				mSurfaceCB.startAutoFocus();		
+				return true;
+			}
+					
+		});
 	}
 
 	@Override
@@ -93,6 +105,7 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
+		mRectView.setPaintColor(Color.BLACK);
 		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this,
 				mLoaderCallback);
 		mSurfaceCB.startPreview();
