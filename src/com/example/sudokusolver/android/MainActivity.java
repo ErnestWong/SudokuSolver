@@ -22,6 +22,7 @@ import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ToggleButton;
 
 public class MainActivity extends Activity {
 	private Context mContext;
@@ -36,6 +37,7 @@ public class MainActivity extends Activity {
 
 	// private CameraBridgeViewBase opencvCameraView;
 
+	/*
 	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
 		@Override
 		public void onManagerConnected(int status) {
@@ -52,7 +54,14 @@ public class MainActivity extends Activity {
 			}
 		}
 	};
-
+	*/
+	
+	static{
+		if (!OpenCVLoader.initDebug()) {
+	        Log.d("OpenCV load", "couldn't load library");
+	    }
+	}
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -61,6 +70,7 @@ public class MainActivity extends Activity {
 		final SurfaceView surfaceView = (SurfaceView) findViewById(R.id.surfaceviewcamera);
 		final Button captureButton = (Button) findViewById(R.id.takepicture);
 		final FrameLayout frameLayout = (FrameLayout) findViewById(R.id.frame_layout);
+		final ToggleButton flashButton = (ToggleButton) findViewById(R.id.toggle_flash);
 		imgview = (ImageView) findViewById(R.id.imgview);
 		mRectView = new RectangleView(this);
 		frameLayout.addView(mRectView);
@@ -71,7 +81,24 @@ public class MainActivity extends Activity {
 		mSurfaceCB = new SurfaceHolderCallback(mCamera, mRectView, mContext);
 		// add callback interface to holder
 		mSurfaceHolder.addCallback(mSurfaceCB);
-
+		/*
+		flashButton.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				if(flashButton.isChecked()){
+					mSurfaceCB.toggleFlash(true);
+					flashButton.toggle();
+					flashButton.setText("Flash on");
+				} else {
+					mSurfaceCB.toggleFlash(false);
+					flashButton.toggle();
+					flashButton.setText("Flash off");
+				}
+				
+			}
+		});
+		*/
 		// button
 		captureButton.setOnClickListener(new View.OnClickListener() {
 
@@ -106,8 +133,7 @@ public class MainActivity extends Activity {
 	protected void onResume() {
 		super.onResume();
 		mRectView.setPaintColor(Color.BLACK);
-		OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this,
-				mLoaderCallback);
+		//OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
 		mSurfaceCB.startPreview();
 
 	}

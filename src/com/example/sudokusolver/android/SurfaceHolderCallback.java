@@ -101,6 +101,23 @@ public class SurfaceHolderCallback implements SurfaceHolder.Callback {
 		mCamera.cancelAutoFocus();
 	}
 
+	public void toggleFlash(boolean on){
+		if(mParams == null){
+			mParams = mCamera.getParameters();
+		}
+		if(on){
+			List<String> modes = mParams.getSupportedFlashModes();
+			if(modes.contains(Camera.Parameters.FLASH_MODE_ON)){
+				mParams.setFlashMode(Camera.Parameters.FLASH_MODE_ON);
+			} else {
+				Log.d("Flash Mode", "Unsupported Flash");
+			}
+		} else {
+			mParams.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+		}
+		mCamera.setParameters(mParams);
+	}
+	
 	private Camera.AutoFocusCallback autoFocusCB = new Camera.AutoFocusCallback() {
 
 		@Override
