@@ -6,9 +6,9 @@ Android application that captures image of Sudoku puzzle using camera and proces
 
 #Screenshots
 <img src="https://raw.githubusercontent.com/ErnestWong/SudokuSolver/master/img/sudoku-before.png"
-alt="sudoku-before" width="415" height="475"/>
+alt="sudoku-before" width="375" height="400"/>
 <img src="https://raw.githubusercontent.com/ErnestWong/SudokuSolver/master/img/sudoku-after.png"
-alt="sudoku-solved" width="415" height="475"/>
+alt="sudoku-solved" width="375" height="400"/>
 
 #Libraries Used
 * [OpenCV 2.4.9](http://opencv.org/)
