@@ -26,4 +26,4 @@ alt="sudoku-solved" width="325" height="350"/>
   
   3. <b>Continuous feed detection feature</b>: currently only executes image processing when button is pressed. Could have a feature that continuously detects a sudoku puzzle and overlays the solution onto the preview.
   
-  4.<b>Rotation detection</b>: currently can detect a puzzle with a few degrees of rotation. Could have a pre-processing feature that detects the angle of the rotation and rotates the image before using the image processing algorithms. 
+  4. <b>Rotation detection</b>: currently can detect a puzzle with a few degrees of rotation. Could have a pre-processing feature that detects the angle of the rotation and rotates the image before using the image processing algorithms. 
