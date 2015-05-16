@@ -20,10 +20,19 @@ alt="sudoku-solved" width="325" height="350"/>
   
 
 * <b>Image processing</b>
-  1. <b>Noise reduction</b>: currently using connected component labelling algorithm to remove parts of the image which aren't numbers which requires a pass-through of all the pixels in the image. Could possibly use a more efficient approach to reduce image noise.
+  1. <b>Noise reduction</b> 
+    currently using connected component labelling algorithm to remove parts of the image which aren't numbers which requires a passthrough of all the pixels in the image.
+
+    *Improvement*: Could possibly use a more efficient approach to reduce image noise.
   
-  2. <b>Puzzle detection</b>: currently scanning through image from center across all four directions until outer gridlines of puzzle is reached, which is really inefficient. Could use an algorithm to detect the largest rectangle/square in the image and assume that to be the puzzle.
+  2. <b>Puzzle detection</b>: currently scanning through image from center across all four directions until outer gridlines of puzzle is reached, which is really inefficient. 
+    
+    *Improvement*: Could use an algorithm to detect the largest rectangle/square in the image and assume that to be the puzzle.
   
-  3. <b>Continuous feed detection feature</b>: currently only executes image processing when button is pressed. Could have a feature that continuously detects a sudoku puzzle and overlays the solution onto the preview.
+  3. <b>Continuous feed detection feature</b>: currently only executes image processing when button is pressed. 
+    
+    *Improvement*: Could have a feature that continuously detects a sudoku puzzle and overlays the solution onto the preview.
   
-  4. <b>Rotation detection</b>: currently can detect a puzzle with a few degrees of rotation. Could have a pre-processing feature that detects the angle of the rotation and rotates the image before using the image processing algorithms. 
+  4. <b>Rotation detection</b>: currently can detect a puzzle with a few degrees of rotation. 
+  
+    *Improvement*: Could have a pre-processing feature that detects the angle of the rotation and rotates the image before using the image processing algorithms. 
