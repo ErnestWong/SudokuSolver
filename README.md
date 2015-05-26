@@ -1,4 +1,7 @@
 SudokuSolver
+
+[![Analytics](https://ga-beacon.appspot.com/UA-63379901-2/sudokusolver/readme?pixel)](https://github.com/igrigorik/ga-beacon)
+
 ============
 
 Android application that captures image of Sudoku puzzle using camera and processes solution using image processing and OCR technology. 
