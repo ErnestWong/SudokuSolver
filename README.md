@@ -1,7 +1,5 @@
 SudokuSolver
 
-[![Analytics](https://ga-beacon.appspot.com/UA-63379901-2/sudokusolver/readme?pixel)](https://github.com/igrigorik/ga-beacon)
-
 ============
 
 Android application that captures image of Sudoku puzzle using camera and processes solution using image processing and OCR technology. 
@@ -35,3 +33,6 @@ alt="sudoku-solved" width="325" height="350"/>
   
   4. <b>Rotation detection</b>: currently can detect a puzzle with a few degrees of rotation.  
     *Improvement*: Could have a pre-processing feature that detects the angle of the rotation and rotates the image before using the image processing algorithms. 
+
+[![Analytics](https://ga-beacon.appspot.com/UA-63379901-2/sudokusolver/readme?pixel)](https://github.com/igrigorik/ga-beacon)
+
